@@ -432,6 +432,9 @@ Uncomment this and use atomproccall as necessary, then copypaste the output into
 /datum/donator_gear/air_horn
 	name = "air horn"
 	unlock_path = /obj/item/bikehorn/airhorn
+/datum/donator_gear/sad_horn
+	name = "sad horn"
+	unlock_path = /obj/item/bikehorn/sad
 /datum/donator_gear/camera
 	name = "camera"
 	unlock_path = /obj/item/camera
@@ -456,6 +459,9 @@ Uncomment this and use atomproccall as necessary, then copypaste the output into
 /datum/donator_gear/hardsuit_clown
 	name = "clown hardsuit"
 	unlock_path = /obj/item/clothing/suit/yogs/armor/hardsuit_clown
+/datum/donator_gear/orca_dress
+	name = "creator's dress"
+	unlock_path = /obj/item/clothing/suit/yogs/keiki
 /datum/donator_gear/oreo
 	name = "Black and white sneakers"
 	unlock_path = /obj/item/clothing/shoes/yogs/trainers
