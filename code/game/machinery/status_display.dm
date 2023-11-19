@@ -74,7 +74,7 @@
 
 /// Update the display and, if necessary, re-enable processing.
 /obj/machinery/status_display/proc/update()
-	if (process() != PROCESS_KILL)
+	if (process(SSMACHINES_DT) != PROCESS_KILL)
 		START_PROCESSING(SSmachines, src)
 
 /obj/machinery/status_display/power_change()
@@ -155,7 +155,7 @@
 		var/width = 4 * marqee_length
 		var/time = (width + 32) * SCROLL_RATE
 		animate(src, maptext_x = -width, time = time, loop = -1)
-		animate(maptext_x = 32, time = 0)
+		animate(maptext_x = 32, time = 0 SECONDS)
 	else
 		// Centered text
 		maptext = generate_text(line, center = TRUE)
@@ -171,7 +171,7 @@
 	var/friendc = FALSE      // track if Friend Computer mode
 	var/last_picture  // For when Friend Computer mode is undone
 
-/obj/machinery/status_display/evac/Initialize()
+/obj/machinery/status_display/evac/Initialize(mapload)
 	. = ..()
 	// register for radio system
 	SSradio.add_object(src, frequency)
@@ -317,7 +317,7 @@
 	var/mode = SD_BLANK
 	var/emotion = "Neutral"
 
-/obj/machinery/status_display/ai/Initialize()
+/obj/machinery/status_display/ai/Initialize(mapload)
 	. = ..()
 	GLOB.ai_status_displays.Add(src)
 

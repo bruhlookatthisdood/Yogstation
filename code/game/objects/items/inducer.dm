@@ -13,7 +13,7 @@
 	var/obj/item/stock_parts/cell/cell
 	var/recharging = FALSE
 
-/obj/item/inducer/Initialize()
+/obj/item/inducer/Initialize(mapload)
 	. = ..()
 	if(!cell && cell_type)
 		cell = new cell_type
@@ -22,8 +22,8 @@
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))
 	var/transferred = target.give(totransfer)
 	cell.use(transferred)
-	cell.update_icon()
-	target.update_icon()
+	cell.update_appearance(UPDATE_ICON)
+	target.update_appearance(UPDATE_ICON)
 
 /obj/item/inducer/get_cell()
 	return cell
@@ -66,12 +66,12 @@
 		if(!opened)
 			to_chat(user, span_notice("You unscrew the battery compartment."))
 			opened = TRUE
-			update_icon()
+			update_appearance(UPDATE_ICON)
 			return
 		else
 			to_chat(user, span_notice("You close the battery compartment."))
 			opened = FALSE
-			update_icon()
+			update_appearance(UPDATE_ICON)
 			return
 	if(istype(W, /obj/item/stock_parts/cell))
 		if(opened)
@@ -80,7 +80,7 @@
 					return
 				to_chat(user, span_notice("You insert [W] into [src]."))
 				cell = W
-				update_icon()
+				update_appearance(UPDATE_ICON)
 				return
 			else
 				to_chat(user, span_notice("[src] already has \a [cell] installed!"))
@@ -107,6 +107,37 @@
 	if(istype(A, /obj/item/gun/energy))
 		to_chat(user,"Error unable to interface with device")
 		return FALSE
+	if(ishuman(A))
+		var/mob/living/carbon/human/H = A
+		if(HAS_TRAIT(H, TRAIT_POWERHUNGRY)) //let's charge some dumb robot players
+			if(user.zone_selected != BODY_ZONE_CHEST)
+				to_chat(user, span_warning("You need to target [A]'s chest with [src] to recharge [H.p_them()]!"))
+				recharging = FALSE
+				return TRUE
+			coefficient = 0.1
+			var/totransfer = min(cell.charge,(powertransfer * coefficient))
+			var/done_any = FALSE
+			if(H.nutrition >= NUTRITION_LEVEL_FAT - 25)
+				to_chat(user, span_notice("[A] is fully charged!"))
+				recharging = FALSE
+				return TRUE
+			user.visible_message("[user] starts recharging [A] with [src].",span_notice("You start recharging [A] with [src]."))
+			while(H.nutrition < NUTRITION_LEVEL_FAT - 25)
+				if(do_after(user, 1 SECONDS, user) && cell.charge)
+					done_any = TRUE
+					cell.use(totransfer*coefficient)
+					H.adjust_nutrition(powertransfer*coefficient)
+					H.apply_damage(totransfer*coefficient, BURN, BODY_ZONE_CHEST, wound_bonus = CANT_WOUND)
+					user.visible_message("Smoke rises off of [A]'s body!",span_notice("You smell something burning as [A] is charged by the [src]!"))
+					do_sparks(1, FALSE, A)
+					if(O)
+						O.update_appearance(UPDATE_ICON)
+				else
+					break
+			if(done_any) // Only show a message if we succeeded at least once
+				user.visible_message("[user] recharged [A]!",span_notice("You recharged [A]!"))
+			recharging = FALSE
+			return TRUE
 	if(istype(A, /obj))
 		O = A
 	if(C)
@@ -117,12 +148,12 @@
 			return TRUE
 		user.visible_message("[user] starts recharging [A] with [src].",span_notice("You start recharging [A] with [src]."))
 		while(C.charge < C.maxcharge)
-			if(do_after(user, 1 SECONDS, target = user) && cell.charge)
+			if(do_after(user, 1 SECONDS, user) && cell.charge)
 				done_any = TRUE
 				induce(C, coefficient)
 				do_sparks(1, FALSE, A)
 				if(O)
-					O.update_icon()
+					O.update_appearance(UPDATE_ICON)
 			else
 				break
 		if(done_any) // Only show a message if we succeeded at least once
@@ -147,10 +178,10 @@
 /obj/item/inducer/attack_self(mob/user)
 	if(opened && cell)
 		user.visible_message("[user] removes [cell] from [src]!",span_notice("You remove [cell]."))
-		cell.update_icon()
+		cell.update_appearance(UPDATE_ICON)
 		user.put_in_hands(cell)
 		cell = null
-		update_icon()
+		update_appearance(UPDATE_ICON)
 
 
 /obj/item/inducer/examine(mob/living/M)
@@ -162,13 +193,13 @@
 	if(opened)
 		. += span_notice("Its battery compartment is open.")
 
-/obj/item/inducer/update_icon()
-	cut_overlays()
+/obj/item/inducer/update_overlays()
+	. = ..()
 	if(opened)
 		if(!cell)
-			add_overlay("inducer-nobat")
+			. += "inducer-nobat"
 		else
-			add_overlay("inducer-bat")
+			. += "inducer-bat"
 
 /obj/item/inducer/sci
 	icon_state = "inducer-sci"
@@ -178,6 +209,6 @@
 	powertransfer = 500
 	opened = TRUE
 
-/obj/item/inducer/sci/Initialize()
+/obj/item/inducer/sci/Initialize(mapload)
 	. = ..()
-	update_icon()
+	update_appearance(UPDATE_ICON)

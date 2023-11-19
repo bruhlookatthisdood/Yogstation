@@ -14,6 +14,15 @@
 		var/mob/living/simple_animal/horror/H = owner.current
 		H.update_horror_hud()
 
+/datum/antagonist/horror/antag_listing_name()
+	. = ..()
+	var/mob/living/simple_animal/horror/H = owner.current
+	if(!istype(H) || !H.victim)
+		return
+	if(H.host_brain)
+		return ..() + ", controlling [H.host_brain.real_name]"
+	return ..() + ", inside [H.victim.real_name]"
+
 /datum/antagonist/horror/proc/give_objectives()
 	if(summoner)
 		var/datum/objective/newobjective = new
@@ -101,7 +110,7 @@
 		to_chat(user, span_bold("[H.real_name]</b> has awoken into your service!"))
 		used = TRUE
 		icon_state = "pet_carrier_open"
-		sleep(5)
+		sleep(0.5 SECONDS)
 		var/obj/item/horrorsummonhorn/horn = new /obj/item/horrorsummonhorn(get_turf(src))
 		horn.summoner = user.mind
 		horn.horror = H
@@ -134,7 +143,7 @@
 		to_chat(user, span_notice("Take a breath before you blow [src] again."))
 		return
 	to_chat(user, span_notice("You take a deep breath and prepare to blow into [src]..."))
-	if(do_mob(user, src, 10 SECONDS))
+	if(do_after(user, 10 SECONDS, src))
 		if(cooldown > world.time)
 			return
 		cooldown = world.time + 10 SECONDS
@@ -144,7 +153,7 @@
 		sleep(5 SECONDS)
 		if(prob(20)) //yeah you're summoning an eldritch horror allright
 			new /obj/effect/temp_visual/summon(summonplace)
-			sleep(10)
+			sleep(1 SECONDS)
 			var/type = pick(typesof(/mob/living/simple_animal/hostile/abomination))
 			var/mob/R = new type(summonplace)
 			playsound(summonplace, "sound/effects/phasein.ogg", 30)
@@ -154,7 +163,7 @@
 				summonplace.visible_message(span_danger("But nothing responds to the call!"))
 			else
 				new /obj/effect/temp_visual/summon(summonplace)
-				sleep(10)
+				sleep(1 SECONDS)
 				horror.leave_victim()
 				horror.forceMove(summonplace)
 				playsound(summonplace, "sound/effects/phasein.ogg", 30)
@@ -244,7 +253,7 @@
 			user.visible_message(span_warning("[user] jams [src] into the airlock and starts prying it open!"), span_warning("You start forcing the airlock open."),
 			span_italics("You hear a metal screeching sound."))
 			playsound(A, 'sound/machines/airlock_alien_prying.ogg', 150, 1)
-			if(!do_after(user, 10 SECONDS, target = A))
+			if(!do_after(user, 10 SECONDS, A))
 				return
 		user.visible_message(span_warning("[user] forces the airlock to open with [user.p_their()] [src]!"), span_warning("You force the airlock to open."),
 		span_italics("You hear a metal screeching sound."))
@@ -255,7 +264,7 @@
 	user.visible_message(span_suicide("[src] coils itself around [user] tightly gripping [user.p_their()] neck! It looks like [user.p_theyre()] trying to commit suicide!"))
 	return (OXYLOSS)
 //Pinpointer
-/obj/screen/alert/status_effect/agent_pinpointer/horror
+/atom/movable/screen/alert/status_effect/agent_pinpointer/horror
 	name = "Soul locator"
 	desc = "Find your target soul."
 /datum/status_effect/agent_pinpointer/horror
@@ -263,7 +272,7 @@
 	minimum_range = 0
 	range_fuzz_factor = 0
 	tick_interval = 20
-	alert_type = /obj/screen/alert/status_effect/agent_pinpointer/horror
+	alert_type = /atom/movable/screen/alert/status_effect/agent_pinpointer/horror
 /datum/status_effect/agent_pinpointer/horror/scan_for_target()
 	return
 //TRAPPED MIND - when horror takes control over your body, you become a mute trapped mind
@@ -278,7 +287,7 @@
 	R = new
 	R.Grant(src)
 
-/mob/living/captive_brain/say(message, bubble_type, var/list/spans = list(), sanitize = TRUE, datum/language/language = null, ignore_spam = FALSE, forced = null)
+/mob/living/captive_brain/say(message, bubble_type, list/spans = list(), sanitize = TRUE, datum/language/language = null, ignore_spam = FALSE, forced = null)
 	if(client)
 		if(client.prefs.muted & MUTE_IC)
 			to_chat(src, span_danger("You cannot speak in IC (muted)."))
@@ -299,14 +308,14 @@
 				var/link = FOLLOW_LINK(M, H.victim)
 				to_chat(M, "[link] [rendered]")
 
-/mob/living/captive_brain/emote(act, m_type = null, message = null, intentional = FALSE)
+/mob/living/captive_brain/emote(act, m_type = null, message = null, intentional = FALSE, is_keybind = FALSE)
 	return
 
 /datum/action/innate/resist_control
 	name = "Resist control"
 	desc = "Try to take back control over your brain. A strong nerve impulse should do it."
-	background_icon_state = "bg_ecult"
-	icon_icon = 'icons/mob/actions/actions_horror.dmi'
+	background_icon_state = "bg_heretic"
+	button_icon = 'icons/mob/actions/actions_horror.dmi'
 	button_icon_state = "resist_control"
 
 /datum/action/innate/resist_control/Activate()
@@ -323,7 +332,7 @@
 		delay += rand(20 SECONDS,30 SECONDS)
 	to_chat(src, span_danger("You begin doggedly resisting the parasite's control."))
 	to_chat(H.victim, span_danger("You feel the captive mind of [src] begin to resist your control."))
-	addtimer(CALLBACK(src, .proc/return_control), delay)
+	addtimer(CALLBACK(src, PROC_REF(return_control)), delay)
 
 /mob/living/captive_brain/proc/return_control()
     if(!H || !H.controlling)
@@ -331,3 +340,10 @@
     to_chat(src, span_userdanger("With an immense exertion of will, you regain control of your body!"))
     to_chat(H.victim, span_danger("You feel control of the host brain ripped from your grasp, and retract your probosci before the wild neural impulses can damage you."))
     H.detatch()
+
+/datum/antagonist/horror/get_preview_icon()
+	var/icon/horror_icon = icon('icons/mob/animal.dmi', "horror_preview")
+
+	horror_icon.Scale(ANTAGONIST_PREVIEW_ICON_SIZE, ANTAGONIST_PREVIEW_ICON_SIZE)
+
+	return horror_icon

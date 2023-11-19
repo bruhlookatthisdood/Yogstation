@@ -11,7 +11,7 @@
 
 #define SOULVALUE soulsOwned.len-reviveNumber
 
-#define DEVILRESURRECTTIME 600
+#define DEVILRESURRECTTIME 60 SECONDS
 
 GLOBAL_LIST_EMPTY(allDevils)
 GLOBAL_LIST_INIT(lawlorify, list (
@@ -84,11 +84,16 @@ GLOBAL_LIST_INIT(devil_pre_title, list("Dark ", "Hellish ", "Fallen ", "Fiery ",
 GLOBAL_LIST_INIT(devil_title, list("Lord ", "Prelate ", "Count ", "Viscount ", "Vizier ", "Elder ", "Adept "))
 GLOBAL_LIST_INIT(devil_syllable, list("hal", "ve", "odr", "neit", "ci", "quon", "mya", "folth", "wren", "geyr", "hil", "niet", "twou", "phi", "coa"))
 GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", ", the Lord of all things", ", Jr."))
+
+/*
+ * Datum
+ */
 /datum/antagonist/devil
 	name = "Devil"
 	roundend_category = "devils"
 	antagpanel_category = "Devil"
 	job_rank = ROLE_DEVIL
+	antag_hud_name = "devil"
 	show_to_ghosts = TRUE
 	var/obligation
 	var/ban
@@ -99,16 +104,16 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 	var/reviveNumber = 0
 	var/form = BASIC_DEVIL
 	var/static/list/devil_spells = typecacheof(list(
-		/obj/effect/proc_holder/spell/aimed/fireball/hellish,
-		/obj/effect/proc_holder/spell/targeted/conjure_item/summon_pitchfork,
-		/obj/effect/proc_holder/spell/targeted/conjure_item/summon_pitchfork/greater,
-		/obj/effect/proc_holder/spell/targeted/conjure_item/summon_pitchfork/ascended,
-		/obj/effect/proc_holder/spell/targeted/infernal_jaunt,
-		/obj/effect/proc_holder/spell/targeted/sintouch,
-		/obj/effect/proc_holder/spell/targeted/sintouch/ascended,
-		/obj/effect/proc_holder/spell/targeted/summon_contract,
-		/obj/effect/proc_holder/spell/targeted/conjure_item/violin,
-		/obj/effect/proc_holder/spell/targeted/summon_dancefloor))
+		/datum/action/cooldown/spell/pointed/projectile/fireball/hellish,
+		/datum/action/cooldown/spell/conjure_item/summon_pitchfork,
+		/datum/action/cooldown/spell/conjure_item/summon_pitchfork/greater,
+		/datum/action/cooldown/spell/conjure_item/summon_pitchfork/ascended,
+		/datum/action/cooldown/spell/jaunt/infernal_jaunt,
+		/datum/action/cooldown/spell/aoe/sintouch,
+		/datum/action/cooldown/spell/aoe/sintouch/ascended,
+		/datum/action/cooldown/spell/pointed/summon_contract,
+		/datum/action/cooldown/spell/conjure_item/violin,
+		/datum/action/cooldown/spell/summon_dancefloor))
 	var/ascendable = FALSE
 
 /datum/antagonist/devil/can_be_owned(datum/mind/new_owner)
@@ -117,7 +122,7 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 
 /datum/antagonist/devil/get_admin_commands()
 	. = ..()
-	.["Toggle ascendable"] = CALLBACK(src,.proc/admin_toggle_ascendable)
+	.["Toggle ascendable"] = CALLBACK(src, PROC_REF(admin_toggle_ascendable))
 
 
 /datum/antagonist/devil/proc/admin_toggle_ascendable(mob/admin)
@@ -215,10 +220,12 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 	to_chat(owner.current, span_warning("Your powers weaken, have more contracts be signed to regain power."))
 	if(ishuman(owner.current))
 		var/mob/living/carbon/human/H = owner.current
-		H.set_species(/datum/species/human, 1)
+
+		var/species_type = owner.current.client.prefs.read_preference(/datum/preference/choiced/species)
+		H.set_species(species_type, 1)
 		H.regenerate_icons()
 	give_appropriate_spells()
-	if(istype(owner.current.loc, /obj/effect/dummy/phased_mob/slaughter/))
+	if(istype(owner.current.loc, /obj/effect/dummy/phased_mob))
 		owner.current.forceMove(get_turf(owner.current))//Fixes dying while jaunted leaving you permajaunted.
 	form = BASIC_DEVIL
 
@@ -235,14 +242,14 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 
 /datum/antagonist/devil/proc/increase_blood_lizard()
 	to_chat(owner.current, span_warning("You feel as though your humanoid form is about to shed.  You will soon turn into a blood lizard."))
-	sleep(50)
+	sleep(5 SECONDS)
 	if(ishuman(owner.current))
 		var/mob/living/carbon/human/H = owner.current
 		H.set_species(/datum/species/lizard, 1)
 		H.underwear = "Nude"
 		H.undershirt = "Nude"
 		H.socks = "Nude"
-		H.dna.features["mcolor"] = "511" //A deep red
+		H.dna.features["mcolor"] = "#551111" //A deep red
 		H.regenerate_icons()
 	else //Did the devil get hit by a staff of transmutation?
 		owner.current.color = "#501010"
@@ -253,7 +260,7 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 
 /datum/antagonist/devil/proc/increase_true_devil()
 	to_chat(owner.current, span_warning("You feel as though your current form is about to shed.  You will soon turn into a true devil."))
-	sleep(50)
+	sleep(5 SECONDS)
 	var/mob/living/carbon/true_devil/A = new /mob/living/carbon/true_devil(owner.current.loc)
 	A.faction |= "hell"
 	owner.current.forceMove(A)
@@ -269,63 +276,65 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 		return
 	var/mob/living/carbon/true_devil/D = owner.current
 	to_chat(D, span_warning("You feel as though your form is about to ascend."))
-	sleep(50)
+	sleep(5 SECONDS)
 	if(!D)
 		return
 	D.visible_message(span_warning("[D]'s skin begins to erupt with spikes."), \
 		span_warning("Your flesh begins creating a shield around yourself."))
-	sleep(100)
+	sleep(10 SECONDS)
 	if(!D)
 		return
 	D.visible_message(span_warning("The horns on [D]'s head slowly grow and elongate."), \
 		span_warning("Your body continues to mutate. Your telepathic abilities grow."))
-	sleep(90)
+	sleep(9 SECONDS)
 	if(!D)
 		return
 	D.visible_message(span_warning("[D]'s body begins to violently stretch and contort."), \
 		span_warning("You begin to rend apart the final barriers to ultimate power."))
-	sleep(40)
+	sleep(4 SECONDS)
 	if(!D)
 		return
 	to_chat(D, "<i><b>Yes!</b></i>")
-	sleep(10)
+	sleep(1 SECONDS)
 	if(!D)
 		return
 	to_chat(D, "<i><b>[span_big("YES!!")]</b></i>")
-	sleep(10)
+	sleep(1 SECONDS)
 	if(!D)
 		return
 	to_chat(D, "<i><b>[span_reallybig("YE--")]</b></i>")
-	sleep(1)
+	sleep(0.1 SECONDS)
 	if(!D)
 		return
 	send_to_playing_players("<font size=5><span class='danger'><b>\"SLOTH, WRATH, GLUTTONY, ACEDIA, ENVY, GREED, PRIDE! FIRES OF HELL AWAKEN!!\"</font></span>")
 	sound_to_playing_players('sound/hallucinations/veryfar_noise.ogg')
 	give_appropriate_spells()
 	D.convert_to_archdevil()
-	if(istype(D.loc, /obj/effect/dummy/phased_mob/slaughter/))
+	if(istype(D.loc, /obj/effect/dummy/phased_mob))
 		D.forceMove(get_turf(D))//Fixes dying while jaunted leaving you permajaunted.
 	var/area/A = get_area(owner.current)
 	if(A)
 		notify_ghosts("An arch devil has ascended in \the [A.name]. Reach out to the devil to be given a new shell for your soul.", source = owner.current, action=NOTIFY_ATTACK)
-	sleep(50)
+	sleep(5 SECONDS)
 	if(!SSticker.mode.devil_ascended)
 		SSshuttle.emergency.request(null, set_coefficient = 0.3)
 	SSticker.mode.devil_ascended++
 	form = ARCH_DEVIL
 
 /datum/antagonist/devil/proc/remove_spells()
-	for(var/X in owner.spell_list)
-		var/obj/effect/proc_holder/spell/S = X
-		if(is_type_in_typecache(S, devil_spells))
-			owner.RemoveSpell(S)
+	for(var/datum/action/cooldown/spell/spells in owner.current.actions)
+		if(is_type_in_typecache(spells, devil_spells))
+			spells.Remove(owner.current)
 
 /datum/antagonist/devil/proc/give_summon_contract()
-	owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/summon_contract(null))
+	var/datum/action/cooldown/spell/pointed/summon_contract/summon_contract = new(owner.current)
+	summon_contract.Grant(owner.current)
 	if(obligation == OBLIGATION_FIDDLE)
-		owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/conjure_item/violin(null))
+		var/datum/action/cooldown/spell/conjure_item/violin/violin = new(owner.current)
+		violin.Grant(owner.current)
 	else if(obligation == OBLIGATION_DANCEOFF)
-		owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/summon_dancefloor(null))
+		var/datum/action/cooldown/spell/summon_dancefloor/dance_floor = new(owner.current)
+		dance_floor.Grant(owner.current)
 
 /datum/antagonist/devil/proc/give_appropriate_spells()
 	remove_spells()
@@ -340,23 +349,41 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 		give_base_spells()
 
 /datum/antagonist/devil/proc/give_base_spells()
-	owner.AddSpell(new /obj/effect/proc_holder/spell/aimed/fireball/hellish(null))
-	owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/conjure_item/summon_pitchfork(null))
+	var/datum/action/cooldown/spell/pointed/projectile/fireball/hellish/fireball = new(owner.current)
+	fireball.Grant(owner.current)
+
+	var/datum/action/cooldown/spell/conjure_item/summon_pitchfork/pitchfork = new(owner.current)
+	pitchfork.Grant(owner.current)
 
 /datum/antagonist/devil/proc/give_blood_spells()
-	owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/conjure_item/summon_pitchfork(null))
-	owner.AddSpell(new /obj/effect/proc_holder/spell/aimed/fireball/hellish(null))
-	owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/infernal_jaunt(null))
+	var/datum/action/cooldown/spell/conjure_item/summon_pitchfork/pitchfork = new(owner.current)
+	pitchfork.Grant(owner.current)
+
+	var/datum/action/cooldown/spell/pointed/projectile/fireball/hellish/fireball = new(owner.current)
+	fireball.Grant(owner.current)
+
+	var/datum/action/cooldown/spell/jaunt/infernal_jaunt/jaunt = new(owner.current)
+	jaunt.Grant(owner.current)
 
 /datum/antagonist/devil/proc/give_true_spells()
-	owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/conjure_item/summon_pitchfork/greater(null))
-	owner.AddSpell(new /obj/effect/proc_holder/spell/aimed/fireball/hellish(null))
-	owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/infernal_jaunt(null))
-	owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/sintouch(null))
+	var/datum/action/cooldown/spell/conjure_item/summon_pitchfork/greater/better_pitchfork = new(owner.current)
+	better_pitchfork.Grant(owner.current)
+
+	var/datum/action/cooldown/spell/pointed/projectile/fireball/hellish/fireball = new(owner.current)
+	fireball.Grant(owner.current)
+
+	var/datum/action/cooldown/spell/jaunt/infernal_jaunt/jaunt = new(owner.current)
+	jaunt.Grant(owner.current)
+
+	var/datum/action/cooldown/spell/aoe/sintouch/sintouch = new(owner.current)
+	sintouch.Grant(owner.current)
 
 /datum/antagonist/devil/proc/give_arch_spells()
-	owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/conjure_item/summon_pitchfork/ascended(null))
-	owner.AddSpell(new /obj/effect/proc_holder/spell/targeted/sintouch/ascended(null))
+	var/datum/action/cooldown/spell/conjure_item/summon_pitchfork/ascended/betterer_pitchfork = new(owner.current)
+	betterer_pitchfork.Grant(owner.current)
+
+	var/datum/action/cooldown/spell/aoe/sintouch/ascended/better_sintouch = new(owner.current)
+	better_sintouch.Grant(owner.current)
 
 /datum/antagonist/devil/proc/beginResurrectionCheck(mob/living/body)
 	if(SOULVALUE>0)
@@ -429,7 +456,7 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 		update_hud()
 	if(body)
 		body.revive(TRUE, TRUE) //Adminrevive also recovers organs, preventing someone from resurrecting without a heart.
-		if(istype(body.loc, /obj/effect/dummy/phased_mob/slaughter/))
+		if(istype(body.loc, /obj/effect/dummy/phased_mob))
 			body.forceMove(get_turf(body))//Fixes dying while jaunted leaving you permajaunted.
 		if(istype(body, /mob/living/carbon/true_devil))
 			var/mob/living/carbon/true_devil/D = body
@@ -455,16 +482,16 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 			return -1
 		currentMob.change_mob_type( /mob/living/carbon/human, targetturf, null, 1)
 		var/mob/living/carbon/human/H = owner.current
-		H.equip_to_slot_or_del(new /obj/item/clothing/under/lawyer/black(H), SLOT_W_UNIFORM)
-		H.equip_to_slot_or_del(new /obj/item/clothing/shoes/laceup(H), SLOT_SHOES)
-		H.equip_to_slot_or_del(new /obj/item/storage/briefcase(H), SLOT_HANDS)
-		H.equip_to_slot_or_del(new /obj/item/pen(H), SLOT_L_STORE)
+		H.equip_to_slot_or_del(new /obj/item/clothing/under/lawyer/black(H), ITEM_SLOT_ICLOTHING)
+		H.equip_to_slot_or_del(new /obj/item/clothing/shoes/laceup(H), ITEM_SLOT_FEET)
+		H.equip_to_slot_or_del(new /obj/item/storage/briefcase(H), ITEM_SLOT_HANDS)
+		H.equip_to_slot_or_del(new /obj/item/pen(H), ITEM_SLOT_LPOCKET)
 		if(SOULVALUE >= BLOOD_THRESHOLD)
 			H.set_species(/datum/species/lizard, 1)
 			H.underwear = "Nude"
 			H.undershirt = "Nude"
 			H.socks = "Nude"
-			H.dna.features["mcolor"] = "511"
+			H.dna.features["mcolor"] = "#551111"
 			H.regenerate_icons()
 			if(SOULVALUE >= TRUE_THRESHOLD) //Yes, BOTH this and the above if statement are to run if soulpower is high enough.
 				var/mob/living/carbon/true_devil/A = new /mob/living/carbon/true_devil(targetturf)
@@ -475,6 +502,8 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 				A.set_name()
 				if(SOULVALUE >= ARCH_THRESHOLD && ascendable)
 					A.convert_to_archdevil()
+		give_appropriate_spells()
+		update_hud()
 	else
 		CRASH("Unable to find a blobstart landmark for hellish resurrection")
 
@@ -510,16 +539,12 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 		var/mob/living/silicon/robot_devil = owner.current
 		var/laws = list("You may not use violence to coerce someone into selling their soul.", "You may not directly and knowingly physically harm a devil, other than yourself.", GLOB.lawlorify[LAW][ban], GLOB.lawlorify[LAW][obligation], "Accomplish your objectives at all costs.")
 		robot_devil.set_law_sixsixsix(laws)
-	sleep(10)
-	if(owner.assigned_role == "Clown" && ishuman(owner.current))
-		var/mob/living/carbon/human/S = owner.current
-		to_chat(S, span_notice("Your infernal nature has allowed you to overcome your clownishness."))
-		S.dna.remove_mutation(CLOWNMUT)
-	.=..()
+	handle_clown_mutation(owner.current, "Your infernal nature has allowed you to overcome your clownishness.")
+	return ..()
 
 /datum/antagonist/devil/on_removal()
 	to_chat(owner.current, span_userdanger("Your infernal link has been severed! You are no longer a devil!"))
-	.=..()
+	. = ..()
 
 /datum/antagonist/devil/apply_innate_effects(mob/living/mob_override)
 	give_appropriate_spells()
@@ -528,10 +553,9 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 	.=..()
 
 /datum/antagonist/devil/remove_innate_effects(mob/living/mob_override)
-	for(var/X in owner.spell_list)
-		var/obj/effect/proc_holder/spell/S = X
-		if(is_type_in_typecache(S, devil_spells))
-			owner.RemoveSpell(S)
+	for(var/datum/action/cooldown/spell/spells in owner.current.actions)
+		if(is_type_in_typecache(spells, devil_spells))
+			spells.Remove(owner.current)
 	owner.current.remove_all_languages(LANGUAGE_DEVIL)
 	.=..()
 
@@ -568,3 +592,10 @@ GLOBAL_LIST_INIT(devil_suffix, list(" the Red", " the Soulless", " the Master", 
 	ban = randomdevilban()
 	banish = randomdevilbanish()
 	ascendable = prob(25)
+
+/datum/antagonist/devil/get_preview_icon()
+	var/icon/devil_icon = icon('icons/effects/64x64.dmi', "devil")
+
+	devil_icon.Scale(ANTAGONIST_PREVIEW_ICON_SIZE, ANTAGONIST_PREVIEW_ICON_SIZE)
+
+	return devil_icon

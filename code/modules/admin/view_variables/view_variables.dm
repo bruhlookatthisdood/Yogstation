@@ -43,7 +43,7 @@
 	var/sprite_text
 	if(sprite)
 		sprite_text = "<img src='vv[hash].png'></td><td>"
-	var/list/header = islist(D)? list("<b>/list</b>") : D.vv_get_header()
+	var/list/header = isappearance? list("<b>/image</b>") : (islist(D)? list("<b>/list</b>") : D.vv_get_header())
 
 	var/marked_line
 	if(holder && holder.marked_datum && holder.marked_datum == D)
@@ -78,7 +78,9 @@
 	if (!islist && !isappearance)
 		for (var/V in D.vars)
 			names += V
-	sleep(1)//For some reason, without this sleep, VVing will cause client to disconnect on certain objects.
+	sleep(0.1 SECONDS)//For some reason, without this sleep, VVing will cause client to disconnect on certain objects.
+
+	log_admin("[key_name(usr)] viewed the variables of [D].")
 
 	var/list/variable_html = list()
 	if (islist)

@@ -11,10 +11,11 @@
 AshCorr	=	Host
 Xantam	=	Host
  
-tehladyk = Council Member
-MenacingManatee = Council Member
-Num1bamf = Council Member
 adamsogm = Council Member
-zxmongoose = Council Member
- 
+britishgrace = Council Member
+margot = Council Member
+mordrehel = Council Member
+ynot01 = Council Member
+
 jamied12	=	Head Developer
+baiomu = Head Developer

@@ -2,14 +2,14 @@
 	name = "storage implant"
 	desc = "Stores up to two big items in a bluespace pocket."
 	icon_state = "storage"
-	item_color = "r"
+	implant_color = "r"
 	var/max_slot_stacking = 4
 
 /obj/item/implant/storage/activate()
 	. = ..()
 	SEND_SIGNAL(src, COMSIG_TRY_STORAGE_SHOW, imp_in, TRUE)
 
-/obj/item/implant/storage/removed(source, silent = FALSE, special = 0)
+/obj/item/implant/storage/removed(mob/living/source, silent = FALSE, special = 0)
 	if(!special)
 		var/datum/component/storage/lostimplant = GetComponent(/datum/component/storage/concrete/implant)
 		var/mob/living/implantee = source

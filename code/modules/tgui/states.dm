@@ -63,10 +63,10 @@
 	// Close UIs if mindless.
 	if(!client)
 		return UI_CLOSE
-	// Disable UIs if unconcious.
+	// Disable UIs if unconscious.
 	else if(stat)
 		return UI_DISABLED
-	// Update UIs if incapicitated but concious.
+	// Update UIs if incapicitated but conscious.
 	else if(incapacitated())
 		return UI_UPDATE
 	return UI_INTERACTIVE
@@ -78,6 +78,8 @@
 
 /mob/living/silicon/ai/shared_ui_interaction(src_object)
 	// Disable UIs if the AI is unpowered.
+	if(apc_override == src_object) //allows AI to (eventually) use the interface for their own APC even when out of power
+		return UI_INTERACTIVE
 	if(lacks_power())
 		return UI_DISABLED
 	return ..()

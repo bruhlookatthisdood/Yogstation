@@ -35,8 +35,8 @@ GLOBAL_LIST_EMPTY(voice_announce_list)
 
 	GLOB.voice_announce_list[id] = src
 	usr << link(url_base + "[CONFIG_GET(string/serversqlname)]/[id]")
-	addtimer(CALLBACK(src, .proc/timeout1), 15 SECONDS)
-	addtimer(CALLBACK(src, .proc/timeout2), 5 MINUTES)
+	addtimer(CALLBACK(src, PROC_REF(timeout1)), 15 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(timeout2)), 5 MINUTES)
 
 /datum/voice_announce/proc/timeout1()
 	if(!was_queried && !started_playing)
@@ -69,7 +69,7 @@ GLOBAL_LIST_EMPTY(voice_announce_list)
 			var/turf/T = get_turf(M)
 			if(T.z == z_level)
 				SEND_SOUND(M, sound2)
-	sleep(30)
+	sleep(3 SECONDS)
 	if(canceled)
 		return
 	// Play for everyone else

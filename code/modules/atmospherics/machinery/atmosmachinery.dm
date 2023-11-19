@@ -18,7 +18,7 @@ GLOBAL_LIST_EMPTY(pipeimages)
 	move_resist = INFINITY				//Moving a connected machine without actually doing the normal (dis)connection things will probably cause a LOT of issues.
 	idle_power_usage = 0
 	active_power_usage = 0
-	power_channel = ENVIRON
+	power_channel = AREA_USAGE_ENVIRON
 	layer = GAS_PIPE_HIDDEN_LAYER //under wires
 	resistance_flags = FIRE_PROOF
 	max_integrity = 200
@@ -52,7 +52,7 @@ GLOBAL_LIST_EMPTY(pipeimages)
 		normalize_cardinal_directions()
 	nodes = new(device_type)
 	if (!armor)
-		armor = list("melee" = 25, "bullet" = 10, "laser" = 10, "energy" = 100, "bomb" = 0, "bio" = 100, "rad" = 100, "fire" = 100, "acid" = 70)
+		armor = list(MELEE = 25, BULLET = 10, LASER = 10, ENERGY = 100, BOMB = 0, BIO = 100, RAD = 100, FIRE = 100, ACID = 70)
 	..()
 	if(process)
 		SSair.atmos_machinery += src
@@ -117,15 +117,15 @@ GLOBAL_LIST_EMPTY(pipeimages)
 			if(can_be_node(target, i))
 				nodes[i] = target
 				break
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/machinery/atmospherics/proc/setPipingLayer(new_layer)
 	piping_layer = (pipe_flags & PIPING_DEFAULT_LAYER_ONLY) ? PIPING_LAYER_DEFAULT : new_layer
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
-/obj/machinery/atmospherics/update_icon()
+/obj/machinery/atmospherics/update_icon(updates=ALL)
+	. = ..()
 	layer = initial(layer) + piping_layer / 1000
-	return ..()
 
 /obj/machinery/atmospherics/proc/can_be_node(obj/machinery/atmospherics/target, iteration)
 	return connection_check(target, piping_layer)
@@ -175,7 +175,7 @@ GLOBAL_LIST_EMPTY(pipeimages)
 		var/obj/machinery/atmospherics/pipe/P = reference
 		P.destroy_network()
 	nodes[nodes.Find(reference)] = null
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/machinery/atmospherics/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/pipe)) //lets you autodrop
@@ -202,13 +202,30 @@ GLOBAL_LIST_EMPTY(pipeimages)
 	var/unsafe_wrenching = FALSE
 	var/internal_pressure = int_air.return_pressure()-env_air.return_pressure()
 
-	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
+	var/empty_pipe = FALSE
+
+	if(istype(src, /obj/machinery/atmospherics/components))
+		var/list/datum/gas_mixture/all_gas_mixes = return_analyzable_air()
+		var/empty_mixes = 0
+		for(var/gas_mix_number in 1 to device_type)
+			var/datum/gas_mixture/gas_mix = all_gas_mixes[gas_mix_number]
+			if(!(gas_mix.total_moles() > 0))
+				empty_mixes++
+		if(empty_mixes == device_type)
+			empty_pipe = TRUE
+			
+	if(!(int_air.total_moles() > MINIMUM_MOLE_COUNT || unsafe_wrenching))
+		empty_pipe = TRUE
+
+	if(!empty_pipe)
+		to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 
 	if (internal_pressure > 2*ONE_ATMOSPHERE)
 		to_chat(user, span_warning("As you begin unwrenching \the [src] a gush of air blows in your face... maybe you should reconsider?"))
 		unsafe_wrenching = TRUE //Oh dear oh dear
 
-	if(I.use_tool(src, user, 20, volume=50))
+	var/time_taken = empty_pipe ? 0 : 2 SECONDS
+	if(I.use_tool(src, user, time_taken, volume=50))
 		user.visible_message( \
 			"[user] unfastens \the [src].", \
 			span_notice("You unfasten \the [src]."), \
@@ -232,6 +249,9 @@ GLOBAL_LIST_EMPTY(pipeimages)
 		var/datum/gas_mixture/int_air = return_air()
 		var/datum/gas_mixture/env_air = loc.return_air()
 		pressures = int_air.return_pressure() - env_air.return_pressure()
+
+	if(user.mob_has_heavy_gravity())
+		return
 
 	user.visible_message(span_danger("[user] is sent flying by pressure!"),span_userdanger("The pressure sends you flying!"))
 
@@ -307,10 +327,12 @@ GLOBAL_LIST_EMPTY(pipeimages)
 	if(target_move)
 		if(target_move.can_crawl_through())
 			if(is_type_in_typecache(target_move, GLOB.ventcrawl_machinery))
+				if(!do_after(user, 2 SECONDS, get_turf(target_move)))
+					return
 				user.forceMove(target_move.loc) //handle entering and so on.
 				user.visible_message(span_notice("You hear something squeezing through the ducts..."), "<span class='notice'>You climb out the ventilation system.")
 			else
-				var/list/pipenetdiff = returnPipenets() ^ target_move.returnPipenets()
+				var/list/pipenetdiff = return_pipenets() ^ target_move.return_pipenets()
 				if(pipenetdiff.len)
 					user.update_pipe_vision(target_move)
 				user.forceMove(target_move)
@@ -334,7 +356,7 @@ GLOBAL_LIST_EMPTY(pipeimages)
 /obj/machinery/atmospherics/proc/can_crawl_through()
 	return TRUE
 
-/obj/machinery/atmospherics/proc/returnPipenets()
+/obj/machinery/atmospherics/proc/return_pipenets()
 	return list()
 
 /obj/machinery/atmospherics/update_remote_sight(mob/user)

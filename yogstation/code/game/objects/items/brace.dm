@@ -23,11 +23,10 @@
 	var/obj/machinery/door/airlock/placed_on
 	var/cover_open = FALSE
 
-/obj/structure/deployed_brace/update_icon()
-	..()
-	cut_overlays()
+/obj/structure/deployed_brace/update_overlays()
+	. = ..()
 	if(cover_open)
-		add_overlay("cover_open")
+		. += "cover_open"
 
 /obj/structure/deployed_brace/examine(mob/user)
 	. = ..()
@@ -53,7 +52,7 @@
 	cover_open = !cover_open
 	tool.play_tool_sound(src)
 	to_chat(user, span_notice("You [cover_open ? "open" : "close"] the cover."))
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/structure/deployed_brace/wrench_act(mob/user, obj/item/tool)
 	if(get_dist(user, placed_on) > 1)
@@ -65,7 +64,7 @@
 		return
 	to_chat(user, span_notice("You struggle to disable the hydraulics..."))
 	playsound(src, 'sound/machines/airlock_alien_prying.ogg', 100, 1)
-	if(do_after(user, 2 SECONDS SECONDS, target = src))
+	if(do_after(user, 20 SECONDS, src))
 		remove(user)
 
 /obj/structure/deployed_brace/proc/remove(mob/user = null)

@@ -3,26 +3,26 @@
 	desc = "A mechanical door that permits one-way access to an area."
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "ministile_map"
-	power_channel = ENVIRON
+	power_channel = AREA_USAGE_ENVIRON
 	density = TRUE
 	obj_integrity = 150
 	max_integrity = 150
 	//Smaller turnstile easier to smash
-	armor = list("melee" = 30, "bullet" = 20, "laser" = 0, "energy" = 60, "bomb" = 10, "bio" = 100, "rad" = 100, "fire" = 90, "acid" = 50)
+	armor = list(MELEE = 30, BULLET = 20, LASER = 0, ENERGY = 60, BOMB = 10, BIO = 100, RAD = 100, FIRE = 90, ACID = 50)
 	anchored = TRUE
 	use_power = FALSE
 	idle_power_usage = 2
 	resistance_flags = LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF
 	layer = OPEN_DOOR_LAYER
-	climbable = TRUE
 
 /obj/machinery/ministile/hop
 	name = "HOP line turnstile"
 	req_one_access = list(ACCESS_HEADS)
 	
-/obj/machinery/ministile/Initialize()
+/obj/machinery/ministile/Initialize(mapload)
 	. = ..()
 	icon_state = "ministile"
+	AddElement(/datum/element/climbable)
 
 /obj/machinery/ministile/CanAtmosPass(turf/T)
 	return TRUE
@@ -49,7 +49,7 @@
 			if(allowed(rider) && !mover.pulledby) //defer to the above dragging code if we are being dragged
 				allowed = TRUE
 
-	if(get_dir(loc, mover.loc) == dir || allowed || mover==machineclimber) //Make sure looking at appropriate border, loc is first so the turnstyle faces the mover
+	if(get_dir(loc, mover.loc) == dir || allowed) //Make sure looking at appropriate border, loc is first so the turnstyle faces the mover
 		flick("ministile_operate", src)
 		playsound(src,'sound/items/ratchet.ogg',50,0,3)
 		return TRUE

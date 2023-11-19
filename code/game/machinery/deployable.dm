@@ -42,10 +42,10 @@
 	. = ..()
 	if(locate(/obj/structure/barricade) in get_turf(mover))
 		return TRUE
-	else if(istype(mover, /obj/item/projectile))
+	else if(istype(mover, /obj/projectile))
 		if(!anchored)
 			return TRUE
-		var/obj/item/projectile/proj = mover
+		var/obj/projectile/proj = mover
 		if(proj.firer && Adjacent(proj.firer))
 			return TRUE
 		if(prob(proj_pass_rate))
@@ -72,7 +72,7 @@
 			return
 		else
 			to_chat(user, span_notice("You start adding [I] to [src]..."))
-			if(do_after(user, 5 SECONDS, target=src))
+			if(do_after(user, 5 SECONDS, src))
 				W.use(5)
 				new /turf/closed/wall/mineral/wood/nonmetal(get_turf(src))
 				qdel(src)
@@ -100,7 +100,7 @@
 	if(I.tool_behaviour == TOOL_CROWBAR && user.a_intent != INTENT_HARM)
 		user.visible_message("[user.name] starts prying [src.name] apart.", \
 							span_notice("You start prying the barricade apart"))
-		if(I.use_tool(src, user, 190, volume=50))
+		if(I.use_tool(src, user, 10 SECONDS, volume=50))
 			to_chat(user, span_notice("You disassemble the barricade."))
 			new /obj/item/stack/sheet/mineral/wood(user.loc, 5)
 			qdel(src)
@@ -123,9 +123,12 @@
 	proj_pass_rate = 20
 	pass_flags = LETPASSTHROW
 	bar_material = SAND
-	climbable = TRUE
 	smooth = SMOOTH_TRUE
 	canSmoothWith = list(/obj/structure/barricade/sandbags, /turf/closed/wall, /turf/closed/wall/r_wall, /obj/structure/falsewall, /obj/structure/falsewall/reinforced, /turf/closed/wall/rust, /turf/closed/wall/r_wall/rust, /obj/structure/barricade/security)
+
+/obj/structure/barricade/sandbags/Initialize(mapload)
+	. = ..()
+	AddElement(/datum/element/climbable)
 
 /obj/structure/barricade/security
 	name = "security barrier"
@@ -136,15 +139,15 @@
 	anchored = FALSE
 	max_integrity = 180
 	proj_pass_rate = 20
-	armor = list("melee" = 10, "bullet" = 50, "laser" = 50, "energy" = 50, "bomb" = 10, "bio" = 100, "rad" = 100, "fire" = 10, "acid" = 0)
+	armor = list(MELEE = 10, BULLET = 50, LASER = 50, ENERGY = 50, BOMB = 10, BIO = 100, RAD = 100, FIRE = 10, ACID = 0)
 
 	var/deploy_time = 40
 	var/deploy_message = TRUE
 
 
-/obj/structure/barricade/security/Initialize()
+/obj/structure/barricade/security/Initialize(mapload)
 	. = ..()
-	addtimer(CALLBACK(src, .proc/deploy), deploy_time)
+	addtimer(CALLBACK(src, PROC_REF(deploy)), deploy_time)
 
 /obj/structure/barricade/security/proc/deploy()
 	icon_state = "barrier1"
@@ -187,20 +190,20 @@
 	new /obj/structure/barricade/security(get_turf(src.loc))
 	switch(mode)
 		if(VERTICAL)
-			var/target_turf = get_step(src, NORTH)
-			if(!(is_blocked_turf(target_turf)))
+			var/turf/target_turf = get_step(src, NORTH)
+			if(!(target_turf.is_blocked_turf()))
 				new /obj/structure/barricade/security(target_turf)
 
-			var/target_turf2 = get_step(src, SOUTH)
-			if(!(is_blocked_turf(target_turf2)))
+			var/turf/target_turf2 = get_step(src, SOUTH)
+			if(!(target_turf2.is_blocked_turf()))
 				new /obj/structure/barricade/security(target_turf2)
 		if(HORIZONTAL)
-			var/target_turf = get_step(src, EAST)
-			if(!(is_blocked_turf(target_turf)))
+			var/turf/target_turf = get_step(src, EAST)
+			if(!(target_turf.is_blocked_turf()))
 				new /obj/structure/barricade/security(target_turf)
 
-			var/target_turf2 = get_step(src, WEST)
-			if(!(is_blocked_turf(target_turf2)))
+			var/turf/target_turf2 = get_step(src, WEST)
+			if(!(target_turf2.is_blocked_turf()))
 				new /obj/structure/barricade/security(target_turf2)
 	qdel(src)
 

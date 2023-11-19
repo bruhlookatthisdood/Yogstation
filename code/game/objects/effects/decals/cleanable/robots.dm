@@ -16,7 +16,7 @@
 	var/direction = pick(directions)
 	for (var/i = 0, i < pick(1, 200; 2, 150; 3, 50), i++)
 		if (!mapload)
-			sleep(2)
+			sleep(0.2 SECONDS)
 		if (i > 0)
 			if (prob(40))
 				new /obj/effect/decal/cleanable/oil/streak(src.loc)
@@ -51,7 +51,7 @@
 	blood_state = BLOOD_STATE_OIL
 	bloodiness = BLOOD_AMOUNT_PER_DECAL
 
-/obj/effect/decal/cleanable/oil/Initialize()
+/obj/effect/decal/cleanable/oil/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(/datum/reagent/oil, 30)
 
@@ -76,6 +76,6 @@
 	icon_state = "streak1"
 	random_icon_states = list("streak1", "streak2", "streak3", "streak4", "streak5")
 
-/obj/effect/decal/cleanable/oil/slippery/ComponentInitialize()
+/obj/effect/decal/cleanable/oil/slippery/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/slippery, 80, (NO_SLIP_WHEN_WALKING | SLIDE))

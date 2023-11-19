@@ -18,7 +18,7 @@
 	list_reagents = list(/datum/reagent/consumable/eggyolk = 5, /datum/reagent/growthserum = 1)
 	cooked_type = /obj/item/reagent_containers/food/snacks/boiledegg
 	filling_color = "#F0E68C"
-	foodtype = MEAT | EGG
+	foodtype = EGG
 	grind_results = list()
 	var/mob/living/egg_rper
 
@@ -28,7 +28,7 @@
 		egg_rper = new(src)
 		egg_rper.real_name = name
 		egg_rper.name = name
-		egg_rper.stat = CONSCIOUS
+		egg_rper.set_stat(CONSCIOUS)
 		user.mind.transfer_to(egg_rper)
 	return BRUTELOSS
 
@@ -39,7 +39,7 @@
 /obj/item/reagent_containers/food/snacks/egg/gland
 	desc = "An egg! It looks weird..."
 
-/obj/item/reagent_containers/food/snacks/egg/gland/Initialize()
+/obj/item/reagent_containers/food/snacks/egg/gland/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(get_random_reagent_id(), 15)
 
@@ -56,7 +56,7 @@
 /obj/item/reagent_containers/food/snacks/egg/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/toy/crayon))
 		var/obj/item/toy/crayon/C = W
-		var/clr = C.item_color
+		var/clr = C.crayon_color
 
 		if(!(clr in list("blue", "green", "mime", "orange", "purple", "rainbow", "red", "yellow")))
 			to_chat(usr, span_notice("[src] refuses to take on this colour!"))
@@ -64,7 +64,6 @@
 
 		to_chat(usr, span_notice("You colour [src] with [W]."))
 		icon_state = "egg-[clr]"
-		item_color = clr
 	else if(istype(W, /obj/item/stamp/clown))
 		var/clowntype = pick("grock", "grimaldi", "rainbow", "chaos", "joker", "sexy", "standard", "bobble", "krusty", "bozo", "pennywise", "ronald", "jacobs", "kelly", "popov", "cluwne")
 		icon_state = "egg-clown-[clowntype]"
@@ -75,35 +74,27 @@
 
 /obj/item/reagent_containers/food/snacks/egg/blue
 	icon_state = "egg-blue"
-	item_color = "blue"
 
 /obj/item/reagent_containers/food/snacks/egg/green
 	icon_state = "egg-green"
-	item_color = "green"
 
 /obj/item/reagent_containers/food/snacks/egg/mime
 	icon_state = "egg-mime"
-	item_color = "mime"
 
 /obj/item/reagent_containers/food/snacks/egg/orange
 	icon_state = "egg-orange"
-	item_color = "orange"
 
 /obj/item/reagent_containers/food/snacks/egg/purple
 	icon_state = "egg-purple"
-	item_color = "purple"
 
 /obj/item/reagent_containers/food/snacks/egg/rainbow
 	icon_state = "egg-rainbow"
-	item_color = "rainbow"
 
 /obj/item/reagent_containers/food/snacks/egg/red
 	icon_state = "egg-red"
-	item_color = "red"
 
 /obj/item/reagent_containers/food/snacks/egg/yellow
 	icon_state = "egg-yellow"
-	item_color = "yellow"
 
 /obj/item/reagent_containers/food/snacks/friedegg
 	name = "fried egg"
@@ -114,7 +105,7 @@
 	filling_color = "#FFFFF0"
 	list_reagents = list(/datum/reagent/consumable/nutriment = 3)
 	tastes = list("egg" = 4, "salt" = 1, "pepper" = 1)
-	foodtype = MEAT | FRIED | BREAKFAST | EGG
+	foodtype = FRIED | BREAKFAST | EGG
 
 /obj/item/reagent_containers/food/snacks/boiledegg
 	name = "boiled egg"
@@ -124,7 +115,7 @@
 	filling_color = "#FFFFF0"
 	list_reagents = list(/datum/reagent/consumable/nutriment = 2, /datum/reagent/consumable/nutriment/vitamin = 1)
 	tastes = list("egg" = 1)
-	foodtype = MEAT | BREAKFAST | EGG
+	foodtype = BREAKFAST | EGG
 
 /obj/item/reagent_containers/food/snacks/omelette
 	name = "omelette du fromage"
@@ -135,7 +126,7 @@
 	bitesize = 1
 	w_class = WEIGHT_CLASS_NORMAL
 	tastes = list("egg" = 1, "cheese" = 1)
-	foodtype = MEAT | BREAKFAST | EGG
+	foodtype = BREAKFAST | EGG | DAIRY
 
 /obj/item/reagent_containers/food/snacks/omelette/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/kitchen/fork))
@@ -163,8 +154,7 @@
 	bonus_reagents = list(/datum/reagent/consumable/nutriment/vitamin = 4)
 	w_class = WEIGHT_CLASS_NORMAL
 	list_reagents = list(/datum/reagent/consumable/nutriment = 6, /datum/reagent/consumable/nutriment/vitamin = 4)
-	tastes = list("egg" = 1, "bacon" = 1, "bun" = 1)
-
+	tastes = list("egg" = 1, "bacon" = 1, "bread" = 1)
 	foodtype = MEAT | BREAKFAST | EGG
 
 /obj/item/reagent_containers/food/snacks/spidereggsham
@@ -175,7 +165,7 @@
 	list_reagents = list(/datum/reagent/consumable/nutriment = 6)
 	bitesize = 4
 	filling_color = "#7FFF00"
-	tastes = list("meat" = 1, "the colour green" = 1)
+	tastes = list("meat" = 1, "cobwebs" = 1, "salt" = 1)
 	foodtype = MEAT | EGG
 
 /obj/item/reagent_containers/food/snacks/eggwrap
@@ -186,4 +176,4 @@
 	list_reagents = list(/datum/reagent/consumable/nutriment = 5)
 	filling_color = "#F0E68C"
 	tastes = list("egg" = 1)
-	foodtype = MEAT | GRAIN | EGG
+	foodtype = GRAIN | EGG | VEGETABLES

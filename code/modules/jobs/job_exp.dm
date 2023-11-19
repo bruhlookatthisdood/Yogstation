@@ -61,7 +61,7 @@ GLOBAL_PROTECT(exp_to_update)
 	if(!prefs.exp || !prefs.exp[EXP_TYPE_LIVING])
 		return pure_numeric ? 0 : "No data"
 	var/exp_living = text2num(prefs.exp[EXP_TYPE_LIVING])
-	return get_exp_format(exp_living)
+	return pure_numeric ? exp_living : get_exp_format(exp_living)
 
 /proc/get_exp_format(expnum)
 	if(expnum > 60)
@@ -192,6 +192,9 @@ GLOBAL_PROTECT(exp_to_update)
 			to_chat(src,span_notice("You got: [minutes] Ghost EXP!"))
 	else if(minutes && !is_afk())	//Let "refresh" checks go through
 		return
+
+	if(prefs.exp["Signal Technician"] > prefs.exp["Network Admin"])
+		play_records["Network Admin"] += prefs.exp["Signal Technician"]
 
 	for(var/jtype in play_records)
 		var/jvalue = play_records[jtype]

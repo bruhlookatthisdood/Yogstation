@@ -15,7 +15,7 @@
 
 
 /obj/structure/spider/run_obj_armor(damage_amount, damage_type, damage_flag = 0, attack_dir)
-	if(damage_flag == "melee")
+	if(damage_flag == MELEE)
 		switch(damage_type)
 			if(BURN)
 				damage_amount *= 2
@@ -30,7 +30,7 @@
 /obj/structure/spider/stickyweb
 	icon_state = "stickyweb1"
 
-/obj/structure/spider/stickyweb/Initialize()
+/obj/structure/spider/stickyweb/Initialize(mapload)
 	if(prob(50))
 		icon_state = "stickyweb2"
 	. = ..()
@@ -45,7 +45,7 @@
 		if(prob(50))
 			to_chat(mover, span_danger("You get stuck in \the [src] for a moment."))
 			return FALSE
-	else if(istype(mover, /obj/item/projectile))
+	else if(istype(mover, /obj/projectile))
 		return prob(30)
 
 /obj/structure/spider/eggcluster
@@ -59,16 +59,16 @@
 	var/poison_per_bite = 5
 	var/list/faction = list("spiders")
 
-/obj/structure/spider/eggcluster/Initialize()
+/obj/structure/spider/eggcluster/Initialize(mapload)
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
 	START_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/structure/spider/eggcluster/process()
-	amount_grown += rand(0,2)
+/obj/structure/spider/eggcluster/process(delta_time)
+	amount_grown += rand(0,2) * delta_time
 	if(amount_grown >= 100)
-		var/num = rand(3,12)
+		var/num = round(rand(1.5, 6) * delta_time)
 		for(var/i=0, i<num, i++)
 			var/obj/structure/spider/spiderling/S = new /obj/structure/spider/spiderling(src.loc)
 			S.faction = faction.Copy()
@@ -96,7 +96,7 @@
 	new/obj/item/reagent_containers/food/snacks/spiderling(get_turf(src))
 	. = ..()
 
-/obj/structure/spider/spiderling/Initialize()
+/obj/structure/spider/spiderling/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(6,-6)
 	pixel_y = rand(6,-6)
@@ -206,7 +206,7 @@
 	icon_state = "cocoon1"
 	max_integrity = 60
 
-/obj/structure/spider/cocoon/Initialize()
+/obj/structure/spider/cocoon/Initialize(mapload)
 	icon_state = pick("cocoon1","cocoon2","cocoon3")
 	. = ..()
 
@@ -216,7 +216,7 @@
 	user.last_special = world.time + CLICK_CD_BREAKOUT
 	to_chat(user, span_notice("You struggle against the tight bonds... (This will take about [DisplayTimeText(breakout_time)].)"))
 	visible_message("You see something struggling and writhing in \the [src]!")
-	if(do_after(user,(breakout_time), target = src))
+	if(do_after(user, breakout_time, src))
 		if(!user || user.stat != CONSCIOUS || user.loc != src)
 			return
 		qdel(src)

@@ -9,7 +9,7 @@
 
 
 /obj/effect/eldritch
-	name = "Generic rune"
+	name = "generic rune"
 	desc = "Weird combination of shapes and symbols etched into the floor itself. The indentation is filled with thick black tar-like fluid."
 	anchored = TRUE
 	icon_state = ""
@@ -22,17 +22,24 @@
 	. = ..()
 	if(.)
 		return
+	for(var/obj/item/nullrod/antimagic in user.get_equipped_items())
+		user.say("PURGE THE HERESY!!", forced = "nullrod")
+		to_chat(user, span_danger("You cleanse the heresy of [src] with [antimagic]."))
+		qdel(src)
+		return
 	try_activate(user)
 
 /obj/effect/eldritch/proc/try_activate(mob/living/user)
 	if(!IS_HERETIC(user))
 		return
 	if(!is_in_use)
-		INVOKE_ASYNC(src, .proc/activate , user)
+		INVOKE_ASYNC(src, PROC_REF(activate) , user)
 
 /obj/effect/eldritch/attacked_by(obj/item/I, mob/living/user)
 	. = ..()
 	if(istype(I,/obj/item/nullrod))
+		user.say("PURSE THE HERESY!!", forced = "nullrod")
+		to_chat(user, span_danger("You cleanse the heresy of [src] with [I]."))
 		qdel(src)
 
 /obj/effect/eldritch/proc/activate(mob/living/user)
@@ -50,7 +57,7 @@
 			continue
 		if(istype(atom_in_range,/mob/living))
 			var/mob/living/living_in_range = atom_in_range
-			if(living_in_range.stat != DEAD || living_in_range == user) // we only accept corpses, no living beings allowed.
+			if(!living_in_range.stat || living_in_range == user) // we only accept people in crit, no healthy beings allowed.
 				continue
 		atoms_in_range += atom_in_range
 	for(var/X in transmutations)
@@ -77,6 +84,7 @@
 				if(is_type_in_list(local_atom_in_range,local_required_atom_list))
 					selected_atoms |= local_atom_in_range
 					local_required_atoms -= list(local_required_atom_list)
+					break // We found the atom we want, so we can move on to the next required item
 
 		if(length(local_required_atoms) > 0)
 			continue
@@ -100,10 +108,10 @@
 
 		return
 	is_in_use = FALSE
-	to_chat(user,span_warning("Your ritual failed! You used either wrong components or are missing something important!"))
+	to_chat(user,span_warning("Your ritual failed! You used the wrong components or are missing something important!"))
 
 /obj/effect/eldritch/big
-	name = "Transmutation rune"
+	name = "transmutation rune"
 	icon = 'icons/effects/96x96.dmi'
 	icon_state = "eldritch_rune1"
 	pixel_x = -32 //So the big ol' 96x96 sprite shows up right
@@ -173,7 +181,7 @@
   * Use this whenever you want to add someone to the list
   */
 /datum/reality_smash_tracker/proc/AddMind(datum/mind/ecultist)
-	RegisterSignal(ecultist.current, COMSIG_MOB_LOGIN, .proc/ReworkNetwork)
+	RegisterSignal(ecultist.current, COMSIG_MOB_LOGIN, PROC_REF(ReworkNetwork))
 	targets |= ecultist
 	Generate()
 	for(var/obj/effect/reality_smash/R in smashes)
@@ -197,13 +205,17 @@
 	icon_state = "pierced_illusion"
 	anchored = TRUE
 	resistance_flags = FIRE_PROOF | UNACIDABLE | ACID_PROOF
+	mouse_opacity = MOUSE_OPACITY_OPAQUE
 
 /obj/effect/broken_illusion/attack_hand(mob/living/user)
 	if(!ishuman(user))
 		return ..()
 	var/mob/living/carbon/human/human_user = user
+	var/datum/antagonist/bloodsucker/bloodsuckerdatum = user.mind.has_antag_datum(/datum/antagonist/bloodsucker)
 	if(IS_HERETIC(human_user))
-		to_chat(human_user,span_boldwarning("You know better than to tempt forces out of your control!"))
+		to_chat(human_user, span_boldwarning("You know better than to tempt forces out of your control!"))
+	if(IS_BLOODSUCKER(human_user) || bloodsuckerdatum.my_clan?.get_clan() == CLAN_LASOMBRA)
+		to_chat(human_user, span_boldwarning("This shard has already been harvested!"))
 	else
 		var/obj/item/bodypart/arm = human_user.get_active_hand()
 		if(prob(25))
@@ -211,7 +223,7 @@
 			arm.dismember()
 			qdel(arm)
 		else
-			to_chat(human_user,span_danger("You pull your hand away from the hole as the eldritch energy flails trying to catch onto the existance itself!"))
+			to_chat(human_user,span_danger("You pull your hand away from the hole as the eldritch energy flails while trying to catch onto the existence itself!"))
 
 /obj/effect/broken_illusion/attack_tk(mob/user)
 	if(!ishuman(user))
@@ -228,7 +240,7 @@
 			human_user.safe_throw_at(throwtarget, rand(1,20), 1, src, force = MOVE_FORCE_OVERPOWERING , quickstart = TRUE)
 			human_user.Shake(rand(-100,100), rand(-100,100), 110) //oh we are TOTALLY stacking these //turns out we are not in fact stacking these
 			to_chat(user, span_userdanger("[pick("I- I- I-", "NO-", "IT HURTS-", "GETOUTOFMYHEADGETOUTOFMY-", "<i>POD-</i>","<i>COVE-</i>", "AAAAAAAAA-")]"))
-			sleep(1.1) //Spooky flavor message spam
+			sleep(0.11 SECONDS) //Spooky flavor message spam
 		to_chat(user, span_cultbold("That was a really bad idea..."))
 		human_user.ghostize()
 		var/obj/item/bodypart/head/head = locate() in human_user.bodyparts
@@ -263,7 +275,7 @@
 	///who has already used this influence
 	var/list/siphoners = list()
 
-/obj/effect/reality_smash/Initialize()
+/obj/effect/reality_smash/Initialize(mapload)
 	. = ..()
 	GLOB.reality_smash_track.smashes += src
 	img = image(icon, src, "reality_smash", OBJ_LAYER)
@@ -314,7 +326,7 @@
 
 /datum/status_effect/brazil_penance
 	id = "brazil_penance"
-	alert_type = /obj/screen/alert/status_effect/brazil_penance
+	alert_type = /atom/movable/screen/alert/status_effect/brazil_penance
 	///counts how close to escaping brazil the owner is
 	var/penance_left = 15
 	///sacrifices made to reduce penance_left, each is applied when leaving
@@ -322,20 +334,20 @@
 	///list of limbs to do stuff to
 	var/list/unspooked_limbs = list(BODY_ZONE_R_ARM, BODY_ZONE_L_ARM, BODY_ZONE_R_LEG, BODY_ZONE_L_LEG)
 
-/obj/screen/alert/status_effect/brazil_penance
+/atom/movable/screen/alert/status_effect/brazil_penance
 	name = "Otherworldly Tarrif"
 	desc = "The things of this place want something from you. You won't be able to leave until enough has been taken."
 	icon_state = "shadow_mend"
 
-/obj/screen/alert/status_effect/brazil_penance/MouseEntered(location,control,params)
+/atom/movable/screen/alert/status_effect/brazil_penance/MouseEntered(location,control,params)
 	desc = initial(desc)
 	var/datum/status_effect/brazil_penance/P = attached_effect
 	desc += "<br><font size=3><b>You currently need to sacrifice [P.penance_left] marbles to escape.</b></font>"
 	..()
 
 /datum/status_effect/brazil_penance/on_apply()
-	var/datum/effect_system/smoke_spread/S = new
-	S.set_up(1, get_turf(owner))
+	var/datum/effect_system/fluid_spread/smoke/S = new
+	S.set_up(1, location = get_turf(owner))
 	S.start()
 	owner.revive(full_heal = TRUE) //this totally won't be used to bypass stuff(tm)
 	owner.regenerate_organs()
@@ -361,7 +373,7 @@
 			switch(P)
 				if(PENANCE_SOUL)
 					owner.hellbound = TRUE
-					to_chat(owner, span_velvet("You feel a peculular emptiness..."))
+					to_chat(owner, span_velvet("You feel a peculiar emptiness..."))
 				if(PENANCE_LIMB)
 					var/obj/item/bodypart/BP
 					while(!BP)
@@ -395,7 +407,7 @@
 					owner.blood_volume = 0
 					owner.death()
 			penance_sources[P] --
-			sleep(2)
+			sleep(0.2 SECONDS)
 
 /datum/status_effect/brazil_penance/on_remove()
 	. = ..()
@@ -410,6 +422,9 @@
 	desc = "it takes your soul, and other stuff"
 	icon = 'icons/mob/triangle.dmi'
 	icon_state = "triangle"
+	light_power = 2
+	light_range = 5
+	light_color = COLOR_RED
 	///list of penance this can give with the amount of points they are worth
 	var/list/penance_given = list(PENANCE_LIFE = 10, PENANCE_SOUL = 14, PENANCE_LIMB = 5, PENANCE_SKELETON = 1, PENANCE_TRAUMA_ADV = 5, PENANCE_TRAUMA_BASIC = 1)
 
@@ -464,6 +479,7 @@
 	desc = "A small, gaseous blob that makes your head pound as you approach it. It will accept your marbles." //get it you LOSe your mARlbeSe hehehahaeheahaeh
 	icon = 'icons/mob/lavaland/lavaland_monsters.dmi'
 	icon_state = "curseblob"
+	light_color = COLOR_PURPLE
 	penance_given = list(PENANCE_TRAUMA_ADV = 5, PENANCE_TRAUMA_BASIC = 1)
 
 /obj/effect/penance_giver/eldritch
@@ -471,6 +487,7 @@
 	desc = "This denizen of hell will accept your soul, and flesh, for your marbles."
 	icon = 'icons/mob/evilpope.dmi' //fun fact the pope's mask is off center on his north sprite and now you have to see it too
 	icon_state = "EvilPope"
+	light_color = COLOR_SILVER
 	penance_given = list(PENANCE_SOUL = 14, PENANCE_SKELETON = 1)
 
 #undef PENANCE_LIFE
@@ -481,3 +498,54 @@
 #undef PENANCE_TRAUMA_BASIC
 #undef TRAUMA_ADV_CAP
 #undef TRAUMA_BASIC_CAP
+
+/obj/effect/cosmic_diamond
+	name = "Cosmic Diamond"
+	icon = 'icons/effects/eldritch.dmi'
+	icon_state = "cosmic_diamond"
+	anchored = TRUE
+
+/obj/effect/temp_visual/cosmic_cloud
+	name = "Cosmic Cloud"
+	icon = 'icons/effects/eldritch.dmi'
+	icon_state = "cosmic_cloud"
+	anchored = TRUE
+	duration = 8
+
+/obj/effect/temp_visual/cosmic_explosion
+	name = "Cosmic Explosion"
+	icon = 'icons/effects/64x64.dmi'
+	icon_state = "cosmic_explosion"
+	anchored = TRUE
+	duration = 5
+	pixel_x = -16
+	pixel_y = -16
+
+/obj/effect/temp_visual/space_explosion
+	name = "Space Explosion"
+	icon = 'icons/effects/64x64.dmi'
+	icon_state = "space_explosion"
+	anchored = TRUE
+	duration = 5
+	pixel_x = -16
+	pixel_y = -16
+
+/obj/effect/temp_visual/cosmic_domain
+	name = "Cosmic Domain"
+	icon = 'icons/effects/160x160.dmi'
+	icon_state = "cosmic_domain"
+	anchored = TRUE
+	duration = 6
+	pixel_x = -64
+	pixel_y = -64
+
+/obj/effect/temp_visual/cosmic_gem
+	name = "cosmic gem"
+	icon = 'icons/effects/eldritch.dmi'
+	icon_state = "cosmic_gem"
+	duration = 12
+
+/obj/effect/temp_visual/cosmic_gem/Initialize(mapload)
+	. = ..()
+	pixel_x = rand(-12, 12)
+	pixel_y = rand(-9, 0)

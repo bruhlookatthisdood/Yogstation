@@ -23,7 +23,7 @@
 	var/obj/structure/opacity_blocker/sight_blocker
 	var/sight_blocker_distance = 1
 
-/obj/structure/necropolis_gate/Initialize()
+/obj/structure/necropolis_gate/Initialize(mapload)
 	. = ..()
 	setDir(SOUTH)
 	var/turf/sight_blocker_turf = get_turf(src)
@@ -101,11 +101,11 @@
 	if(open)
 		new /obj/effect/temp_visual/necropolis(T)
 		visible_message(span_boldwarning("The door slams closed!"))
-		sleep(1)
+		sleep(0.1 SECONDS)
 		playsound(T, 'sound/effects/stonedoor_openclose.ogg', 300, TRUE, frequency = 80000)
-		sleep(1)
+		sleep(0.1 SECONDS)
 		density = TRUE
-		sleep(1)
+		sleep(0.1 SECONDS)
 		var/turf/sight_blocker_turf = get_turf(src)
 		if(sight_blocker_distance)
 			for(var/i in 1 to sight_blocker_distance)
@@ -115,21 +115,21 @@
 		if(sight_blocker_turf)
 			sight_blocker.pixel_y = initial(sight_blocker.pixel_y) - (32 * sight_blocker_distance)
 			sight_blocker.forceMove(sight_blocker_turf)
-		sleep(2.5)
+		sleep(0.25 SECONDS)
 		playsound(T, 'sound/magic/clockwork/invoke_general.ogg', 30, TRUE, frequency = 15000)
 		add_overlay(door_overlay)
 		open = FALSE
 	else
 		cut_overlay(door_overlay)
 		new /obj/effect/temp_visual/necropolis/open(T)
-		sleep(2)
+		sleep(0.2 SECONDS)
 		visible_message(span_warning("The door starts to grind open..."))
 		playsound(T, 'sound/effects/stonedoor_openclose.ogg', 300, TRUE, frequency = 20000)
-		sleep(22)
+		sleep(2.2 SECONDS)
 		sight_blocker.forceMove(src)
-		sleep(5)
+		sleep(0.5 SECONDS)
 		density = FALSE
-		sleep(5)
+		sleep(0.5 SECONDS)
 		open = TRUE
 	changing_openness = FALSE
 	return TRUE
@@ -142,7 +142,7 @@ GLOBAL_DATUM(necropolis_gate, /obj/structure/necropolis_gate/legion_gate)
 	desc = "A tremendous, impossibly large gateway, set into a massive tower of stone."
 	sight_blocker_distance = 2
 
-/obj/structure/necropolis_gate/legion_gate/Initialize()
+/obj/structure/necropolis_gate/legion_gate/Initialize(mapload)
 	. = ..()
 	GLOB.necropolis_gate = src
 
@@ -157,12 +157,12 @@ GLOBAL_DATUM(necropolis_gate, /obj/structure/necropolis_gate/legion_gate)
 //ATTACK HAND IGNORING PARENT RETURN VALUE
 /obj/structure/necropolis_gate/legion_gate/attack_hand(mob/user)
 	if(!open && !changing_openness)
-		var/safety = alert(user, "You think this might be a bad idea...", "Knock on the door?", "Proceed", "Abort")
+		var/safety = tgui_alert(user, "You think this might be a bad idea...", "Knock on the door?", list("Proceed", "Abort"))
 		if(safety == "Abort" || !in_range(src, user) || !src || open || changing_openness || user.incapacitated())
 			return
 		user.visible_message(span_warning("[user] knocks on [src]..."), span_boldannounce("You tentatively knock on [src]..."))
 		playsound(user.loc, 'sound/effects/shieldbash.ogg', 100, 1)
-		sleep(50)
+		sleep(5 SECONDS)
 	return ..()
 
 /obj/structure/necropolis_gate/legion_gate/toggle_the_gate(mob/user, legion_damaged)
@@ -222,7 +222,7 @@ GLOBAL_DATUM(necropolis_gate, /obj/structure/necropolis_gate/legion_gate)
 	var/open = FALSE
 	var/static/mutable_appearance/top_overlay
 
-/obj/structure/necropolis_arch/Initialize()
+/obj/structure/necropolis_arch/Initialize(mapload)
 	. = ..()
 	icon_state = "arch_bottom"
 	top_overlay = mutable_appearance('icons/effects/160x160.dmi', "arch_top")
@@ -293,24 +293,24 @@ GLOBAL_DATUM(necropolis_gate, /obj/structure/necropolis_gate/legion_gate)
 	falling = TRUE
 	var/break_that_sucker = fall_on_cross == DESTROY_ON_CROSS
 	playsound(src, 'sound/effects/pressureplate.ogg', 50, TRUE)
-	Shake(-1, -1, 25)
-	sleep(5)
+	Shake(-1, -1, 2.5 SECONDS)
+	sleep(0.5 SECONDS)
 	if(break_that_sucker)
 		playsound(src, 'sound/effects/break_stone.ogg', 50, TRUE)
 	else
 		playsound(src, 'sound/mecha/mechmove04.ogg', 50, TRUE)
-	animate(src, alpha = 0, pixel_y = pixel_y - 3, time = 5)
+	animate(src, alpha = 0, pixel_y = pixel_y - 3, time = 0.5 SECONDS)
 	fallen = TRUE
 	if(break_that_sucker)
 		QDEL_IN(src, 10)
 	else
-		addtimer(CALLBACK(src, .proc/rebuild), 55)
+		addtimer(CALLBACK(src, PROC_REF(rebuild)), 55)
 
 /obj/structure/stone_tile/proc/rebuild()
 	pixel_x = initial(pixel_x)
 	pixel_y = initial(pixel_y) - 5
-	animate(src, alpha = initial(alpha), pixel_x = initial(pixel_x), pixel_y = initial(pixel_y), time = 30)
-	sleep(30)
+	animate(src, alpha = initial(alpha), pixel_x = initial(pixel_x), pixel_y = initial(pixel_y), time = 3 SECONDS)
+	sleep(3 SECONDS)
 	falling = FALSE
 	fallen = FALSE
 

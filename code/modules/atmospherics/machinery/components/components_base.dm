@@ -8,6 +8,7 @@
 
 	var/list/datum/pipeline/parents
 	var/list/datum/gas_mixture/airs
+	var/startingvolume = 200
 
 /obj/machinery/atmospherics/components/New()
 	parents = new(device_type)
@@ -16,7 +17,7 @@
 	..()
 
 	for(var/i in 1 to device_type)
-		var/datum/gas_mixture/A = new(200)
+		var/datum/gas_mixture/A = new(startingvolume)
 		airs[i] = A
 
 // Iconnery
@@ -24,7 +25,8 @@
 /obj/machinery/atmospherics/components/proc/update_icon_nopipes()
 	return
 
-/obj/machinery/atmospherics/components/update_icon()
+/obj/machinery/atmospherics/components/update_icon(updates=ALL)
+	. = ..()
 	update_icon_nopipes()
 
 	underlays.Cut()
@@ -32,7 +34,7 @@
 	plane = showpipe ? GAME_PLANE : FLOOR_PLANE
 
 	if(!showpipe)
-		return ..()
+		return
 
 	var/connected = 0 //Direction bitset
 
@@ -49,7 +51,6 @@
 
 	if(!shift_underlay_only)
 		PIPING_LAYER_SHIFT(src, piping_layer)
-	return ..()
 
 /obj/machinery/atmospherics/components/proc/get_pipe_underlay(state, dir, color = null)
 	if(color)
@@ -101,7 +102,7 @@
 /obj/machinery/atmospherics/components/replacePipenet(datum/pipeline/Old, datum/pipeline/New)
 	parents[parents.Find(Old)] = New
 
-/obj/machinery/atmospherics/components/unsafe_pressure_release(var/mob/user, var/pressures)
+/obj/machinery/atmospherics/components/unsafe_pressure_release(mob/user, pressures)
 	..()
 
 	var/turf/T = get_turf(src)
@@ -126,7 +127,7 @@
 		T.assume_air(to_release)
 		air_update_turf(1)
 
-/obj/machinery/atmospherics/components/proc/safe_input(var/title, var/text, var/default_set)
+/obj/machinery/atmospherics/components/proc/safe_input(title, text, default_set)
 	var/new_value = input(usr,text,title,default_set) as num
 	if(usr.canUseTopic(src))
 		return new_value
@@ -141,9 +142,9 @@
 			WARNING("Component is missing a pipenet! Rebuilding...")
 			SSair.add_to_rebuild_queue(src)
 		else
-			parent.update = 1
+			parent.update = TRUE
 
-/obj/machinery/atmospherics/components/returnPipenets()
+/obj/machinery/atmospherics/components/return_pipenets()
 	. = list()
 	for(var/i in 1 to device_type)
 		. += returnPipenet(nodes[i])
@@ -158,5 +159,5 @@
 
 // Tool acts
 
-/obj/machinery/atmospherics/components/analyzer_act(mob/living/user, obj/item/I)
-	atmosanalyzer_scan(airs, user, src)
+/obj/machinery/atmospherics/components/return_analyzable_air()
+	return airs

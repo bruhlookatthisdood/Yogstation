@@ -235,7 +235,7 @@
 					screen = 0
 
 			if("editcode")
-				if(is_banned_from(usr.ckey, "Signal Technician"))
+				if(is_banned_from(usr.ckey, "Network Admin"))
 					to_chat(usr, span_warning("You are banned from using NTSL."))
 					return
 				if(editingcode == usr)
@@ -290,11 +290,12 @@
 	else
 		..()
 
-/obj/machinery/computer/telecomms/traffic/emag_act(mob/user)
-	if(!emagged)
-		playsound(src.loc, 'sound/effects/sparks4.ogg', 75, 1)
-		emagged = TRUE
-		to_chat(user, span_notice("You you disable the security protocols."))
+/obj/machinery/computer/telecomms/traffic/emag_act(mob/user, obj/item/card/emag/emag_card)
+	if(emagged)
+		return FALSE
+	playsound(src.loc, 'sound/effects/sparks4.ogg', 75, 1)
+	emagged = TRUE
+	to_chat(user, span_notice("You you disable the security protocols."))
 
 /obj/machinery/computer/telecomms/traffic/proc/canAccess(mob/user)
 	if(issilicon(user) || in_range(user, src))

@@ -15,7 +15,7 @@
 	var/cooldown = 0
 	var/pulseicon = "plutonium_core_pulse"
 
-/obj/item/nuke_core/Initialize()
+/obj/item/nuke_core/Initialize(mapload)
 	. = ..()
 	START_PROCESSING(SSobj, src)
 
@@ -48,6 +48,7 @@
 	item_state = "tile"
 	lefthand_file = 'icons/mob/inhands/misc/sheets_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/misc/sheets_righthand.dmi'
+	cryo_preserve = TRUE
 	var/obj/item/nuke_core/core
 
 /obj/item/nuke_core_container/Destroy()
@@ -61,7 +62,7 @@
 	core = ncore
 	icon_state = "core_container_loaded"
 	say(span_warning("Container is sealing..."))
-	addtimer(CALLBACK(src, .proc/seal), 50)
+	addtimer(CALLBACK(src, PROC_REF(seal)), 50)
 	return TRUE
 
 /obj/item/nuke_core_container/proc/seal()
@@ -137,7 +138,7 @@
 			return FALSE
 		forceMove(tongs)
 		tongs.sliver = src
-		tongs.update_icon()
+		tongs.update_appearance(UPDATE_ICON)
 		to_chat(user, span_notice("You carefully pick up [src] with [tongs]."))
 	else if(istype(W, /obj/item/scalpel/supermatter) || istype(W, /obj/item/nuke_core_container/supermatter/)) // we don't want it to dust
 		return
@@ -158,7 +159,7 @@
 			span_italics("Everything suddenly goes silent."))
 	radiation_pulse(user, 500, 2)
 	playsound(get_turf(user), 'sound/effects/supermatter.ogg', 50, 1)
-	ded.dust()
+	user.dust()
 
 /obj/item/nuke_core_container/supermatter
 	name = "supermatter bin"
@@ -178,7 +179,7 @@
 	T.icon_state = "supermatter_tongs"
 	icon_state = "core_container_loaded"
 	say(span_warning("Container is sealing..."))
-	addtimer(CALLBACK(src, .proc/seal), 50)
+	addtimer(CALLBACK(src, PROC_REF(seal)), 50)
 	return TRUE
 
 /obj/item/nuke_core_container/supermatter/seal()
@@ -201,11 +202,11 @@
 	icon = 'icons/obj/nuke_tools.dmi'
 	icon_state = "supermatter_scalpel"
 	toolspeed = 0.5
-	damtype = "fire"
+	damtype = BURN
 	usesound = 'sound/weapons/bladeslice.ogg'
 	var/usesLeft
 
-/obj/item/scalpel/supermatter/Initialize()
+/obj/item/scalpel/supermatter/Initialize(mapload)
 	. = ..()
 	usesLeft = rand(2, 4)
 
@@ -215,14 +216,15 @@
 	icon = 'icons/obj/nuke_tools.dmi'
 	icon_state = "supermatter_tongs"
 	toolspeed = 0.75
-	damtype = "fire"
+	damtype = BURN
 	var/obj/item/nuke_core/supermatter_sliver/sliver
 
 /obj/item/hemostat/supermatter/Destroy()
 	QDEL_NULL(sliver)
 	return ..()
 
-/obj/item/hemostat/supermatter/update_icon()
+/obj/item/hemostat/supermatter/update_icon_state()
+	. = ..()
 	if(sliver)
 		icon_state = "supermatter_tongs_loaded"
 	else
@@ -240,12 +242,12 @@
 		sliver.forceMove(loc)
 		visible_message(span_notice("\The [sliver] falls out of \the [src] as it hits the ground."))
 		sliver = null
-		update_icon()
+		update_appearance(UPDATE_ICON)
 	..()
 
-/obj/item/hemostat/supermatter/proc/Consume(atom/movable/AM, mob/user)
-	if(ismob(AM))
-		var/mob/victim = AM
+/obj/item/hemostat/supermatter/proc/Consume(atom/movable/AM, mob/living/user)
+	if(isliving(AM))
+		var/mob/living/victim = AM
 		message_admins("[src] has consumed [key_name_admin(victim)] [ADMIN_JMP(src)].")
 		message_admins("[ADMIN_LOOKUPFLW(user)] has used a supermatter sliver to commit dual suicide with [ADMIN_LOOKUPFLW(victim)] at [ADMIN_VERBOSEJMP(src)].") 
 		investigate_log("has consumed [key_name(victim)].", "supermatter")
@@ -262,4 +264,4 @@
 	radiation_pulse(src, 500, 2)
 	playsound(src, 'sound/effects/supermatter.ogg', 50, 1)
 	QDEL_NULL(sliver)
-	update_icon()
+	update_appearance(UPDATE_ICON)

@@ -3,14 +3,17 @@
 	icon = 'icons/obj/weapons/energy.dmi'
 	heat = 3500
 	max_integrity = 200
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 100, "acid" = 30)
+	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 100, ACID = 30)
 	resistance_flags = FIRE_PROOF
-	var/brightness_on = 3
+	light_system = MOVABLE_LIGHT
+	light_range = 3
+	light_power = 1
+	light_on = FALSE
+	var/saber_color = null
 
-/obj/item/melee/transforming/energy/Initialize()
+/obj/item/melee/transforming/energy/Initialize(mapload)
 	. = ..()
 	if(active)
-		set_light(brightness_on)
 		START_PROCESSING(SSobj, src)
 
 /obj/item/melee/transforming/energy/Destroy()
@@ -36,13 +39,12 @@
 	. = ..()
 	if(.)
 		if(active)
-			if(item_color)
-				icon_state = "sword[item_color]"
+			if(saber_color)
+				icon_state = "sword[saber_color]"
 			START_PROCESSING(SSobj, src)
-			set_light(brightness_on)
 		else
 			STOP_PROCESSING(SSobj, src)
-			set_light(0)
+		set_light_on(active)
 
 /obj/item/melee/transforming/energy/is_hot()
 	return active * heat
@@ -87,7 +89,7 @@
 
 /obj/item/melee/transforming/energy/sword
 	name = "energy sword"
-	desc = "May the force be within you."
+	desc = "A powerful energy-based hardlight sword that is easily stored when not in use. 'May the force be within you' is carved on the side of the handle."
 	icon_state = "sword0"
 	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
@@ -101,11 +103,25 @@
 	embedding = list("embed_chance" = 75, "embedded_impact_pain_multiplier" = 10)
 	armour_penetration = 35
 	block_chance = 50
+	saber_color = "green"
+
+/obj/item/melee/transforming/energy/sword/attackby(obj/item/I, mob/living/user, params)
+	if(istype(I, /obj/item/melee/transforming/energy/sword))
+		if(HAS_TRAIT(I, TRAIT_NODROP) || HAS_TRAIT(src, TRAIT_NODROP))
+			to_chat(user, span_warning("\the [HAS_TRAIT(src, TRAIT_NODROP) ? src : I] is stuck to your hand, you can't attach it to \the [HAS_TRAIT(src, TRAIT_NODROP) ? I : src]!"))
+			return
+		else
+			var/obj/item/melee/dualsaber/makeshift/newSaber = new /obj/item/melee/dualsaber/makeshift(user.loc)
+			to_chat(user, span_notice("You crudely attach both [src]s together in order to make a [newSaber]."))
+			qdel(I)
+			qdel(src)
+			return
+	return ..()
 
 /obj/item/melee/transforming/energy/sword/transform_weapon(mob/living/user, supress_message_text)
 	. = ..()
-	if(. && active && item_color)
-		icon_state = "sword[item_color]"
+	if(. && active && saber_color)
+		icon_state = "sword[saber_color]"
 
 /obj/item/melee/transforming/energy/sword/hit_reaction(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0, attack_type = MELEE_ATTACK)
 	if(active)
@@ -113,10 +129,10 @@
 	return 0
 
 /obj/item/melee/transforming/energy/sword/cyborg
-	item_color = "red"
+	saber_color = "red"
 	var/hitcost = 50
 
-/obj/item/melee/transforming/energy/sword/cyborg/attack(mob/M, var/mob/living/silicon/robot/R)
+/obj/item/melee/transforming/energy/sword/cyborg/attack(mob/M, mob/living/silicon/robot/R)
 	if(R.cell)
 		var/obj/item/stock_parts/cell/C = R.cell
 		if(active && !(C.use(hitcost)))
@@ -134,7 +150,7 @@
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "esaw_0"
 	icon_state_on = "esaw_1"
-	item_color = null //stops icon from breaking when turned on.
+	saber_color = null //stops icon from breaking when turned on.
 	hitcost = 75 //Costs more than a standard cyborg esword
 	w_class = WEIGHT_CLASS_NORMAL
 	sharpness = SHARP_EDGED
@@ -157,7 +173,7 @@
 	. = ..()
 	if(LAZYLEN(possible_colors))
 		var/set_color = pick(possible_colors)
-		item_color = set_color
+		saber_color = set_color
 		light_color = possible_colors[set_color]
 
 /obj/item/melee/transforming/energy/sword/saber/process()
@@ -165,7 +181,6 @@
 	if(hacked)
 		var/set_color = pick(possible_colors)
 		light_color = possible_colors[set_color]
-		update_light()
 
 /obj/item/melee/transforming/energy/sword/saber/red
 	possible_colors = list("red" = LIGHT_COLOR_RED)
@@ -183,7 +198,7 @@
 	if(W.tool_behaviour == TOOL_MULTITOOL)
 		if(!hacked)
 			hacked = TRUE
-			item_color = "rainbow"
+			saber_color = "rainbow"
 			to_chat(user, span_warning("RNBW_ENGAGE"))
 
 			if(active)
@@ -201,6 +216,7 @@
 	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
 	icon_state_on = "cutlass1"
+	saber_color = null
 	light_color = "#ff0000"
 
 /obj/item/melee/transforming/energy/blade
@@ -220,11 +236,15 @@
 	sharpness = SHARP_EDGED
 
 //Most of the other special functions are handled in their own files. aka special snowflake code so kewl
-/obj/item/melee/transforming/energy/blade/Initialize()
+/obj/item/melee/transforming/energy/blade/Initialize(mapload)
 	. = ..()
 	spark_system = new /datum/effect_system/spark_spread()
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
+
+/obj/item/melee/transforming/energy/blade/Destroy()
+	QDEL_NULL(spark_system)
+	return ..()
 
 /obj/item/melee/transforming/energy/blade/transform_weapon(mob/living/user, supress_message_text)
 	return

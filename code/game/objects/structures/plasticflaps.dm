@@ -3,7 +3,7 @@
 	desc = "Heavy duty, airtight, plastic flaps. Definitely can't get past those. No way."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "plasticflaps"
-	armor = list("melee" = 100, "bullet" = 80, "laser" = 80, "energy" = 100, "bomb" = 50, "bio" = 100, "rad" = 100, "fire" = 50, "acid" = 50)
+	armor = list(MELEE = 100, BULLET = 80, LASER = 80, ENERGY = 100, BOMB = 50, BIO = 100, RAD = 100, FIRE = 50, ACID = 50)
 	density = FALSE
 	anchored = TRUE
 	CanAtmosPass = ATMOS_PASS_NO
@@ -11,7 +11,7 @@
 /obj/structure/plasticflaps/opaque
 	opacity = TRUE
 
-/obj/structure/plasticflaps/Initialize()
+/obj/structure/plasticflaps/Initialize(mapload)
 	. = ..()
 	alpha = 0
 	SSvis_overlays.add_vis_overlay(src, icon, icon_state, ABOVE_MOB_LAYER, plane, dir, add_appearance_flags = RESET_ALPHA) //you see mobs under it, but you hit them like they are above it
@@ -30,7 +30,7 @@
 	var/action = anchored ? "unscrews [src] from" : "screws [src] to"
 	var/uraction = anchored ? "unscrew [src] from " : "screw [src] to"
 	user.visible_message(span_warning("[user] [action] the floor."), span_notice("You start to [uraction] the floor..."), "You hear rustling noises.")
-	if(W.use_tool(src, user, 100, volume=100, extra_checks = CALLBACK(src, .proc/check_anchored_state, anchored)))
+	if(W.use_tool(src, user, 100, volume=100, extra_checks = CALLBACK(src, PROC_REF(check_anchored_state), anchored)))
 		setAnchored(!anchored)
 		to_chat(user, span_notice(" You [anchored ? "unscrew" : "screw"] [src] from the floor."))
 		return TRUE
@@ -101,7 +101,7 @@
 		new /obj/item/stack/sheet/plastic/five(loc)
 	qdel(src)
 
-/obj/structure/plasticflaps/Initialize()
+/obj/structure/plasticflaps/Initialize(mapload)
 	. = ..()
 	air_update_turf(TRUE)
 

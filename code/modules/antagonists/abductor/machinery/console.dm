@@ -52,7 +52,7 @@
 		return
 	if(!HAS_TRAIT(user, TRAIT_ABDUCTOR_TRAINING) && !HAS_TRAIT(user.mind, TRAIT_ABDUCTOR_TRAINING))
 		to_chat(user, span_warning("You start mashing alien buttons at random!"))
-		if(do_after(user,100, target = src))
+		if(do_after(user, 10 SECONDS, src))
 			TeleporterSend()
 
 /obj/machinery/abductor/console/ui_status(mob/user)
@@ -205,7 +205,7 @@
 			c.console = src
 
 /obj/machinery/abductor/console/proc/AddSnapshot(mob/living/carbon/human/target)
-	if(target.anti_magic_check(FALSE, FALSE, TRUE, 0))
+	if(target.can_block_magic(MAGIC_RESISTANCE_MIND, charge_cost = 0))
 		say("Subject wearing specialized protective tinfoil gear, unable to get a proper scan!")
 		return
 	var/datum/icon_snapshot/entry = new

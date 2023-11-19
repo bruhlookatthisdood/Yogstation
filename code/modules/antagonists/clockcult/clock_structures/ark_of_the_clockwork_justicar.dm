@@ -38,14 +38,14 @@
 	var/next_spaghetti = 0
 	var/spaghetti_cooldown = 50
 
-/obj/structure/destructible/clockwork/massive/celestial_gateway/Initialize()
+/obj/structure/destructible/clockwork/massive/celestial_gateway/Initialize(mapload)
 	. = ..()
 	glow = new(get_turf(src))
 	if(!GLOB.ark_of_the_clockwork_justiciar)
 		GLOB.ark_of_the_clockwork_justiciar = src
 	START_PROCESSING(SSprocessing, src)
 
-/obj/structure/destructible/clockwork/massive/celestial_gateway/take_damage(damage_amount, damage_type = BRUTE, damage_flag = 0, sound_effect = 1, attack_dir)
+/obj/structure/destructible/clockwork/massive/celestial_gateway/take_damage(damage_amount, damage_type = BRUTE, damage_flag = 0, sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	. = ..()
 	if(.)
 		flick("clockwork_gateway_damaged", glow)
@@ -84,7 +84,7 @@
 		var/turf/T = get_turf(M)
 		if(is_servant_of_ratvar(M) || isobserver(M) || (T && T.z == z))
 			M.playsound_local(M, 'sound/magic/clockwork/ark_activation_sequence.ogg', 30, FALSE, pressure_affected = FALSE)
-	addtimer(CALLBACK(src, .proc/let_slip_the_dogs), 300)
+	addtimer(CALLBACK(src, PROC_REF(let_slip_the_dogs)), 300)
 
 /obj/structure/destructible/clockwork/massive/celestial_gateway/proc/let_slip_the_dogs()
 	spawn_animation()
@@ -113,7 +113,7 @@
 	var/turf/T = get_turf(src)
 	var/list/open_turfs = list()
 	for(var/turf/open/OT in orange(1, T))
-		if(!is_blocked_turf(OT, TRUE))
+		if(!OT.is_blocked_turf(TRUE))
 			open_turfs |= OT
 	if(open_turfs.len)
 		for(var/mob/living/L in T)
@@ -130,9 +130,9 @@
 
 /obj/structure/destructible/clockwork/massive/celestial_gateway/proc/initiate_mass_recall()
 	recalling = TRUE
-	sound_to_playing_players('sound/machines/clockcult/ark_recall.ogg', 75, FALSE)
+	sound_to_playing_players('sound/machines/clockcult/ark_recall.ogg', 60, FALSE)
 	hierophant_message("<span class='bold large_brass'>The Eminence has initiated a mass recall! You are being transported to the Ark!</span>")
-	addtimer(CALLBACK(src, .proc/mass_recall), 100)
+	addtimer(CALLBACK(src, PROC_REF(mass_recall)), 100)
 
 /obj/structure/destructible/clockwork/massive/celestial_gateway/proc/mass_recall()
 	for(var/V in SSticker.mode.servants_of_ratvar)
@@ -141,24 +141,25 @@
 			continue
 		if(isliving(M.current) && M.current.stat != DEAD)
 			if(isAI(M.current))
-				M.current.forceMove(get_step(get_step(src, NORTH),NORTH)) // AI too fat, must make sure it always ends up a 2 tiles north instead of on the ark.
+				continue //prevents any cogged AIs from getting teleported to reebe and dying from nocoreitus
 			else
 				M.current.forceMove(get_turf(src))
-		M.current.overlay_fullscreen("flash", /obj/screen/fullscreen/flash)
+		M.current.overlay_fullscreen("flash", /atom/movable/screen/fullscreen/flash)
 		M.current.clear_fullscreen("flash", 5)
 	playsound(src, 'sound/magic/clockwork/invoke_general.ogg', 50, FALSE)
 	recalls_remaining--
 	recalling = FALSE
 	transform = matrix() * 2
-	animate(src, transform = matrix() * 0.5, time = 30, flags = ANIMATION_END_NOW)
+	animate(src, transform = matrix() * 0.5, time = 3 SECONDS, flags = ANIMATION_END_NOW)
 
 /obj/structure/destructible/clockwork/massive/celestial_gateway/Destroy()
 	STOP_PROCESSING(SSprocessing, src)
 	SSshuttle.clearHostileEnvironment(src)
-	if(!purpose_fulfilled && istype(SSticker.mode, /datum/game_mode/clockwork_cult))
+	if(!purpose_fulfilled)
 		hierophant_message("<span class='bold large_brass'>The Ark has fallen!</span>")
 		sound_to_playing_players(null, channel = CHANNEL_JUSTICAR_ARK)
-		SSticker.force_ending = TRUE //rip
+		if(istype(SSticker.mode, /datum/game_mode/clockwork_cult))
+			SSticker.force_ending = TRUE //rip
 	if(glow)
 		qdel(glow)
 		glow = null
@@ -172,7 +173,7 @@
 			if(isobj(L.loc))
 				target = L.loc
 			target.forceMove(get_turf(pick(GLOB.generic_event_spawns)))
-			L.overlay_fullscreen("flash", /obj/screen/fullscreen/flash/static)
+			L.overlay_fullscreen("flash", /atom/movable/screen/fullscreen/flash/static)
 			L.clear_fullscreen("flash", 30)
 			if(isliving(L))
 				var/mob/living/LI = L
@@ -189,15 +190,15 @@
 			resistance_flags |= INDESTRUCTIBLE
 			countdown.stop()
 			visible_message(span_userdanger("[src] begins to pulse uncontrollably... you might want to run!"))
-			sound_to_playing_players(volume = 50, channel = CHANNEL_JUSTICAR_ARK, S = sound('sound/effects/clockcult_gateway_disrupted.ogg'))
+			sound_to_playing_players(volume = 25, channel = CHANNEL_JUSTICAR_ARK, S = sound('sound/effects/clockcult_gateway_disrupted.ogg'))
 			for(var/mob/M in GLOB.player_list)
 				var/turf/T = get_turf(M)
 				if((T && T.z == z) || is_servant_of_ratvar(M))
-					M.playsound_local(M, 'sound/machines/clockcult/ark_deathrattle.ogg', 100, FALSE, pressure_affected = FALSE)
+					M.playsound_local(M, 'sound/machines/clockcult/ark_deathrattle.ogg', 50, FALSE, pressure_affected = FALSE)
 			make_glow()
 			glow.icon_state = "clockwork_gateway_disrupted"
 			resistance_flags |= INDESTRUCTIBLE
-			sleep(27)
+			sleep(2.7 SECONDS)
 			explosion(src, 1, 3, 8, 8)
 			sound_to_playing_players('sound/effects/explosion_distant.ogg', volume = 50)
 	qdel(src)
@@ -209,9 +210,9 @@
 
 /obj/structure/destructible/clockwork/massive/celestial_gateway/ex_act(severity)
 	var/damage = max((obj_integrity * 0.7) / severity, 100) //requires multiple bombs to take down
-	take_damage(damage, BRUTE, "bomb", 0)
+	take_damage(damage, BRUTE, BOMB, 0)
 
-/obj/structure/destructible/clockwork/massive/celestial_gateway/proc/get_arrival_time(var/deciseconds = TRUE)
+/obj/structure/destructible/clockwork/massive/celestial_gateway/proc/get_arrival_time(deciseconds = TRUE)
 	if(seconds_until_activation)
 		. = seconds_until_activation
 	else if(grace_period)
@@ -294,14 +295,14 @@
 	for(var/obj/O in orange(1, src))
 		if(!O.pulledby && !iseffect(O) && O.density)
 			if(!step_away(O, src, 2) || get_dist(O, src) < 2)
-				O.take_damage(50, BURN, "bomb")
-			O.update_icon()
+				O.take_damage(50, BURN, BOMB)
+			O.update_appearance(UPDATE_ICON)
 	for(var/V in GLOB.player_list)
 		var/mob/M = V
 		var/turf/T = get_turf(M)
 		if(is_servant_of_ratvar(M) && (!T || T.z != z))
 			M.forceMove(get_step(src, SOUTH))
-			M.overlay_fullscreen("flash", /obj/screen/fullscreen/flash)
+			M.overlay_fullscreen("flash", /atom/movable/screen/fullscreen/flash)
 			M.clear_fullscreen("flash", 5)
 	if(grace_period)
 		grace_period--
@@ -311,7 +312,7 @@
 		if(-INFINITY to GATEWAY_REEBE_FOUND)
 			if(!second_sound_played)
 				for(var/V in GLOB.generic_event_spawns)
-					addtimer(CALLBACK(src, .proc/open_portal, get_turf(V)), rand(100, 600))
+					addtimer(CALLBACK(src, PROC_REF(open_portal), get_turf(V)), rand(100, 600))
 				sound_to_playing_players('sound/magic/clockwork/invoke_general.ogg', 30, FALSE)
 				sound_to_playing_players(volume = 15, channel = CHANNEL_JUSTICAR_ARK, S = sound('sound/effects/clockcult_gateway_charging.ogg', TRUE))
 				second_sound_played = TRUE
@@ -336,13 +337,13 @@
 				resistance_flags |= INDESTRUCTIBLE
 				purpose_fulfilled = TRUE
 				make_glow()
-				animate(glow, transform = matrix() * 1.5, alpha = 255, time = 125)
+				animate(glow, transform = matrix() * 1.5, alpha = 255, time = 12.5 SECONDS)
 				sound_to_playing_players(volume = 100, channel = CHANNEL_JUSTICAR_ARK, S = sound('sound/effects/ratvar_rises.ogg')) //End the sounds
-				sleep(125)
+				sleep(12.5 SECONDS)
 				make_glow()
-				animate(glow, transform = matrix() * 3, alpha = 0, time = 5)
-				QDEL_IN(src, 3)
-				sleep(3)
+				animate(glow, transform = matrix() * 3, alpha = 0, time = 0.5 SECONDS)
+				QDEL_IN(src, 0.3 SECONDS)
+				sleep(0.3 SECONDS)
 				GLOB.clockwork_gateway_activated = TRUE
 				var/turf/T = SSmapping.get_station_center()
 				new /obj/structure/destructible/clockwork/massive/ratvar(T)
@@ -377,7 +378,16 @@
 				minutes. You will need to create servant players yourself.</span>")
 				final_countdown(35)
 
-
+/obj/structure/destructible/clockwork/massive/celestial_gateway/attack_eminence(mob/camera/eminence/user, params)
+	if(GLOB.ark_of_the_clockwork_justiciar == src)
+		if(recalling)
+			return
+		if(!recalls_remaining)
+			to_chat(user, span_warning("The Ark can no longer recall!"))
+			return
+		if(alert(user, "Initiate mass recall?", "Mass Recall", "Yes", "No") != "Yes" || QDELETED(src) || QDELETED(user) || !obj_integrity)
+			return
+		initiate_mass_recall() //wHOOPS LOOKS LIKE A HULK GOT THROUGH
 
 //the actual appearance of the Ark of the Clockwork Justicar; an object so the edges of the gate can be clicked through.
 /obj/effect/clockwork/overlay/gateway_glow

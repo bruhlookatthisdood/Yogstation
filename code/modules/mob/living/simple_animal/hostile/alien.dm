@@ -6,6 +6,7 @@
 	icon_living = "alienh"
 	icon_dead = "alienh_dead"
 	icon_gib = "syndicate_gib"
+	health_doll_icon = "alienq"
 	gender = FEMALE
 	response_help = "pokes"
 	response_disarm = "shoves"
@@ -19,6 +20,7 @@
 	obj_damage = 60
 	melee_damage_lower = 25
 	melee_damage_upper = 25
+	attack_vis_effect = ATTACK_EFFECT_CLAW
 	attacktext = "slashes"
 	speak_emote = list("hisses")
 	bubble_icon = "alien"
@@ -69,7 +71,7 @@
 	ranged = 1
 	retreat_distance = 5
 	minimum_distance = 5
-	projectiletype = /obj/item/projectile/neurotox
+	projectiletype = /obj/projectile/neurotox
 	projectilesound = 'sound/weapons/pierce.ogg'
 
 
@@ -88,7 +90,7 @@
 	move_to_delay = 4
 	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat/slab/xeno = 4,
 							/obj/item/stack/sheet/animalhide/xeno = 1)
-	projectiletype = /obj/item/projectile/neurotox
+	projectiletype = /obj/projectile/neurotox
 	projectilesound = 'sound/weapons/pierce.ogg'
 	status_flags = 0
 	unique_name = 0
@@ -141,7 +143,7 @@
 	mob_size = MOB_SIZE_LARGE
 	gold_core_spawnable = NO_SPAWN
 
-/obj/item/projectile/neurotox
+/obj/projectile/neurotox
 	name = "neurotoxin"
 	damage = 30
 	icon_state = "toxin"
@@ -168,7 +170,7 @@
 
 /mob/living/simple_animal/hostile/alien/maid/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/cleaning)
+	AddElement(/datum/element/cleaning)
 
 /mob/living/simple_animal/hostile/alien/maid/AttackingTarget()
 	if(ismovable(target))

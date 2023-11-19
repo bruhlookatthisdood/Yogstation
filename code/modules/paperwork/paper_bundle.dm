@@ -17,7 +17,7 @@
 	/// If this was sent via admin fax, allows anyone to see/interact with it
 	var/admin_faxed = FALSE
 
-/obj/item/paper_bundle/attackby(var/obj/item/W, var/mob/user)
+/obj/item/paper_bundle/attackby(obj/item/W, mob/user)
 	..()
 	var/obj/item/paper/P
 	if(istype(W, /obj/item/paper))
@@ -58,7 +58,7 @@
 			usr << browse("", "window=[name]") //Closes the dialog
 		P = src[page]
 		P.attackby(W, user)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	attack_self(usr) //Update the browsed page.
 	add_fingerprint(usr)
 	return
@@ -70,7 +70,7 @@
 			class = "<span class='rose'>"
 		user.visible_message("[class][user] holds \the [P] up to \the [src], it looks like \he's trying to burn it!</span>", \
 		"[class]You hold \the [P] up to \the [src], burning it slowly.</span>")
-		if(do_after(user, 2 SECONDS, TRUE, src))
+		if(do_after(user, 2 SECONDS, src))
 			user.visible_message("[class][user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
 			"[class]You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
 			if(user.get_inactive_hand_index() == src)
@@ -114,7 +114,7 @@
 /obj/item/paper_bundle/attack_self(mob/user as mob)
 	src.show_content(user)
 	add_fingerprint(usr)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	return
 
 /obj/item/paper_bundle/proc/update_screen()
@@ -165,7 +165,7 @@
 				page = amount
 			if(page == amount)
 				screen = 2
-			update_icon()
+			update_appearance(UPDATE_ICON)
 	else
 		to_chat(usr, span_notice("You need to hold it in hand!"))
 	if (istype(src.loc, /mob) || istype(src.loc?.loc, /mob))
@@ -205,8 +205,8 @@
 /obj/item/paper_bundle/AltClick(mob/living/user)
 	unbundle()
 
-/obj/item/paper_bundle/update_icon()
-	cut_overlays()
+/obj/item/paper_bundle/update_overlays()
+	. = ..()
 	var/obj/item/paper/P = src[1]
 	icon_state = P.icon_state
 	overlays = P.overlays
@@ -228,12 +228,12 @@
 			var/datum/picture/picture2 = PR.picture
 			img = picture2.picture_icon
 			photo = 1
-			add_overlay(img)
+			. += img
 	if(i>1)
 		desc =  "[i] papers clipped to each other."
 	else
 		desc = "A single sheet of paper."
 	if(photo)
 		desc += "\nThere is a photo attached to it."
-	add_overlay(image('icons/obj/bureaucracy.dmi', icon_state= "clip"))
+	. += image('icons/obj/bureaucracy.dmi', icon_state= "clip")
 	return

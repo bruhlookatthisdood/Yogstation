@@ -27,12 +27,6 @@
 /obj/machinery/atmospherics/pipe/simple/supply/hidden/layer2,
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
-"ah" = (
-/obj/structure/sink/kitchen{
-	pixel_y = 28
-	},
-/turf/open/floor/wood,
-/area/crew_quarters/bar)
 "ai" = (
 /obj/machinery/door/window/southleft{
 	base_state = "left";
@@ -118,7 +112,7 @@
 /turf/open/floor/wood,
 /area/crew_quarters/theatre)
 "ar" = (
-/obj/item/twohanded/required/kirbyplants/random,
+/obj/item/kirbyplants/random,
 /obj/effect/turf_decal/tile/green{
 	dir = 8
 	},
@@ -177,12 +171,6 @@
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
 "av" = (
-/turf/open/floor/wood,
-/area/crew_quarters/bar)
-"aw" = (
-/obj/machinery/camera{
-	c_tag = "Bar Storage"
-	},
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
 "ax" = (
@@ -1428,7 +1416,7 @@
 /obj/machinery/newscaster{
 	pixel_y = -28
 	},
-/obj/item/twohanded/required/kirbyplants/random,
+/obj/item/kirbyplants/random,
 /obj/effect/turf_decal/tile/green{
 	dir = 8
 	},
@@ -1563,6 +1551,19 @@
 /obj/item/toy/figure/chef,
 /turf/open/floor/plasteel/showroomfloor,
 /area/crew_quarters/kitchen)
+"dL" = (
+/obj/structure/table,
+/obj/item/reagent_containers/food/snacks/mint,
+/obj/effect/spawner/lootdrop/donkpockets{
+	pixel_x = 6;
+	pixel_y = -6
+	},
+/obj/effect/spawner/lootdrop/donkpockets{
+	pixel_x = -9;
+	pixel_y = -6
+	},
+/turf/open/floor/plasteel/cafeteria,
+/area/crew_quarters/kitchen)
 "hD" = (
 /obj/structure/table,
 /obj/machinery/requests_console{
@@ -1592,15 +1593,6 @@
 	},
 /turf/open/floor/plasteel,
 /area/crew_quarters/bar)
-"mB" = (
-/obj/structure/table,
-/obj/item/reagent_containers/food/snacks/mint,
-/obj/item/storage/box/donkpockets{
-	pixel_x = 3;
-	pixel_y = 3
-	},
-/turf/open/floor/plasteel/cafeteria,
-/area/crew_quarters/kitchen)
 "nx" = (
 /obj/structure/table/reinforced,
 /obj/machinery/door/poddoor/shutters/preopen{
@@ -1648,6 +1640,12 @@
 /obj/machinery/oven,
 /turf/open/floor/plasteel/cafeteria,
 /area/crew_quarters/kitchen)
+"wR" = (
+/obj/machinery/chem_master/condimaster{
+	name = "HoochMaster 2000"
+	},
+/turf/open/floor/wood,
+/area/crew_quarters/bar)
 "yt" = (
 /obj/effect/spawner/structure/window,
 /obj/machinery/door/poddoor/preopen{
@@ -1680,7 +1678,7 @@
 /area/crew_quarters/bar)
 "FU" = (
 /obj/structure/table/reinforced,
-/obj/item/storage/box/fancy/donut_box,
+/obj/item/storage/fancy/donut_box,
 /obj/machinery/door/poddoor/shutters/preopen{
 	id = "kitchen";
 	name = "kitchen shutters"
@@ -1833,6 +1831,15 @@
 	name = "bar shutters"
 	},
 /turf/open/floor/plasteel,
+/area/crew_quarters/bar)
+"WE" = (
+/obj/machinery/camera{
+	c_tag = "Bar Storage"
+	},
+/obj/structure/sink/kitchen{
+	pixel_y = 28
+	},
+/turf/open/floor/wood,
 /area/crew_quarters/bar)
 "XT" = (
 /obj/structure/table,
@@ -2070,7 +2077,7 @@ cY
 ad
 "}
 (15,1,1) = {"
-ah
+wR
 av
 aN
 bd
@@ -2087,7 +2094,7 @@ ad
 "}
 (16,1,1) = {"
 ad
-aw
+WE
 aO
 ad
 ad
@@ -2142,7 +2149,7 @@ bp
 aj
 bJ
 bY
-mB
+dL
 oj
 bX
 bX

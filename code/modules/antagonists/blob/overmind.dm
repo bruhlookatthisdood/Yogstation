@@ -44,7 +44,7 @@ GLOBAL_LIST_EMPTY(blob_nodes)
 	var/has_announced = FALSE
 	var/basemodifier = 1
 
-/mob/camera/blob/Initialize(mapload, starting_points = 60, pointmodifier)
+/mob/camera/blob/Initialize(mapload, starting_points = 60, pointmodifier = 1, announcement_delay = 6000)
 	validate_location()
 	blob_points = starting_points
 	basemodifier = pointmodifier
@@ -59,9 +59,9 @@ GLOBAL_LIST_EMPTY(blob_nodes)
 	set_strain(BS)
 	color = blobstrain.complementary_color
 	if(blob_core)
-		blob_core.update_icon()
+		blob_core.update_appearance(UPDATE_ICON)
 	SSshuttle.registerHostileEnvironment(src)
-	announcement_time = world.time + 6000
+	announcement_time = world.time + announcement_delay
 	. = ..()
 	START_PROCESSING(SSobj, src)
 
@@ -116,7 +116,8 @@ GLOBAL_LIST_EMPTY(blob_nodes)
 		set_security_level("delta")
 		max_blob_points = INFINITY
 		blob_points = INFINITY	
-		addtimer(CALLBACK(src, .proc/victory), 450)
+		blob_core.max_integrity = 999999
+		addtimer(CALLBACK(src, PROC_REF(victory)), 450)
 	else if(!free_strain_rerolls && (last_reroll_time + BLOB_REROLL_TIME<world.time))
 		to_chat(src, "<b><span class='big'><font color=\"#EE4000\">You have gained another free strain re-roll.</font></span></b>")
 		free_strain_rerolls = 1
@@ -130,7 +131,7 @@ GLOBAL_LIST_EMPTY(blob_nodes)
 
 /mob/camera/blob/proc/victory()
 	sound_to_playing_players('sound/machines/alarm.ogg')
-	sleep(100)
+	sleep(10 SECONDS)
 	for(var/i in GLOB.mob_living_list)
 		var/mob/living/L = i
 		var/turf/T = get_turf(L)
@@ -152,7 +153,7 @@ GLOBAL_LIST_EMPTY(blob_nodes)
 		else
 			L.fully_heal()
 
-		for(var/area/A in GLOB.sortedAreas)
+		for(var/area/A in GLOB.areas)
 			if(!(A.type in GLOB.the_station_areas))
 				continue
 			if(!A.blob_allowed)
@@ -174,11 +175,12 @@ GLOBAL_LIST_EMPTY(blob_nodes)
 	SSticker.force_ending = 1
 
 /mob/camera/blob/Destroy()
+	QDEL_NULL(blobstrain)
 	for(var/BL in GLOB.blobs)
 		var/obj/structure/blob/B = BL
 		if(B && B.overmind == src)
 			B.overmind = null
-			B.update_icon() //reset anything that was ours
+			B.update_appearance(UPDATE_ICON) //reset anything that was ours
 	for(var/BLO in blob_mobs)
 		var/mob/living/simple_animal/hostile/blob/BM = BLO
 		if(BM)
@@ -205,16 +207,17 @@ GLOBAL_LIST_EMPTY(blob_nodes)
 
 /mob/camera/blob/update_health_hud()
 	if(blob_core)
-		hud_used.healths.maptext = "<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#e36600'>[round(blob_core.obj_integrity)]</font></div>"
+		var/current_health = round((blob_core.obj_integrity / blob_core.max_integrity) * 100)
+		hud_used.healths.maptext = "<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#82ed00'>[current_health]%</font></div>"
 		for(var/mob/living/simple_animal/hostile/blob/blobbernaut/B in blob_mobs)
 			if(B.hud_used && B.hud_used.blobpwrdisplay)
-				B.hud_used.blobpwrdisplay.maptext = "<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#82ed00'>[round(blob_core.obj_integrity)]</font></div>"
+				B.hud_used.blobpwrdisplay.maptext = "<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#82ed00'>[current_health]%</font></div>"
 
 /mob/camera/blob/proc/add_points(points)
 	blob_points = clamp(blob_points + points, 0, max_blob_points)
-	hud_used.blobpwrdisplay.maptext = "<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#82ed00'>[round(blob_points)]</font></div>"
+	hud_used.blobpwrdisplay.maptext = "<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#e36600'>[round(blob_points)]</font></div>"
 
-/mob/camera/blob/say(message, bubble_type, var/list/spans = list(), sanitize = TRUE, datum/language/language = null, ignore_spam = FALSE, forced = null)
+/mob/camera/blob/say(message, bubble_type, list/spans = list(), sanitize = TRUE, datum/language/language = null, ignore_spam = FALSE, forced = null)
 	if (!message)
 		return
 

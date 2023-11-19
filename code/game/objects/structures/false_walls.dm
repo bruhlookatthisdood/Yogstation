@@ -33,7 +33,7 @@
 	var/opening = FALSE
 
 
-/obj/structure/falsewall/Initialize()
+/obj/structure/falsewall/Initialize(mapload)
 	. = ..()
 	air_update_turf(TRUE)
 
@@ -59,7 +59,7 @@
 		for(var/mob/living/obstacle in srcturf) //Stop people from using this as a shield
 			return
 	opening = TRUE
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	addtimer(CALLBACK(src, /obj/structure/falsewall/proc/toggle_open), 5)
 
 /obj/structure/falsewall/proc/toggle_open()
@@ -67,10 +67,11 @@
 		density = !density
 		set_opacity(density)
 		opening = FALSE
-		update_icon()
+		update_appearance(UPDATE_ICON)
 		air_update_turf(TRUE)
 
-/obj/structure/falsewall/update_icon()//Calling icon_update will refresh the smoothwalls if it's closed, otherwise it will make sure the icon is correct if it's open
+/obj/structure/falsewall/update_icon_state()
+	. = ..()
 	if(opening)
 		if(density)
 			icon_state = "fwall_opening"
@@ -146,6 +147,14 @@
 /obj/structure/falsewall/examine_status(mob/user) //So you can't detect falsewalls by examine.
 	return span_notice("The outer plating is <b>welded</b> firmly in place.")
 
+/obj/structure/falsewall/CanAStarPass(ID, dir, caller)
+	. = ..()
+	if(!isliving(caller))
+		return FALSE
+	var/mob/living/passer = caller
+	if(passer.client)
+		return TRUE
+	
 /*
  * False R-Walls
  */
@@ -289,6 +298,15 @@
 	mineral = /obj/item/stack/sheet/mineral/wood
 	walltype = /turf/closed/wall/mineral/wood
 	canSmoothWith = list(/obj/structure/falsewall/wood, /turf/closed/wall/mineral/wood)
+
+/obj/structure/falsewall/bamboo
+	name = "bamboo wall"
+	desc = "A wall with bamboo finish. Zen."
+	icon = 'icons/turf/walls/bamboo_wall.dmi'
+	icon_state = "bamboo"
+	mineral = /obj/item/stack/sheet/mineral/bamboo
+	walltype = /turf/closed/wall/mineral/bamboo
+	canSmoothWith = list(/obj/structure/falsewall/bamboo, /turf/closed/wall/mineral/bamboo)
 
 /obj/structure/falsewall/iron
 	name = "rough metal wall"

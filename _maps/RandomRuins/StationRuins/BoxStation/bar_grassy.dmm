@@ -250,12 +250,6 @@
 	},
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
-"bT" = (
-/obj/machinery/camera{
-	c_tag = "Bar Storage"
-	},
-/turf/open/floor/plasteel,
-/area/crew_quarters/bar)
 "bU" = (
 /obj/machinery/light/small{
 	dir = 4
@@ -416,6 +410,15 @@
 /obj/structure/table/wood,
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
+"ko" = (
+/obj/machinery/camera{
+	c_tag = "Bar Storage"
+	},
+/obj/structure/sink/kitchen{
+	pixel_y = 28
+	},
+/turf/open/floor/plasteel,
+/area/crew_quarters/bar)
 "kW" = (
 /obj/structure/disposalpipe/segment,
 /turf/open/floor/wood,
@@ -427,7 +430,7 @@
 	id = "kitchen";
 	name = "kitchen shutters"
 	},
-/obj/item/storage/box/fancy/donut_box,
+/obj/item/storage/fancy/donut_box,
 /obj/machinery/door/firedoor/border_only{
 	dir = 1
 	},
@@ -437,6 +440,14 @@
 /obj/structure/flora/ausbushes/grassybush,
 /turf/open/floor/grass,
 /area/crew_quarters/bar)
+"lC" = (
+/obj/item/reagent_containers/food/snacks/mint,
+/obj/structure/table/wood,
+/obj/item/seeds/poppy,
+/obj/item/seeds/poppy,
+/obj/item/seeds/poppy,
+/turf/open/floor/wood,
+/area/crew_quarters/kitchen)
 "mb" = (
 /obj/item/reagent_containers/glass/mixbowl{
 	pixel_x = 1;
@@ -670,9 +681,25 @@
 /turf/open/floor/grass,
 /area/crew_quarters/bar)
 "vt" = (
-/obj/item/twohanded/required/kirbyplants/random,
+/obj/item/kirbyplants/random,
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
+"vA" = (
+/obj/structure/table,
+/obj/machinery/microwave{
+	pixel_x = -3;
+	pixel_y = 6
+	},
+/obj/effect/spawner/lootdrop/donkpockets{
+	pixel_x = -8;
+	pixel_y = -8
+	},
+/obj/effect/spawner/lootdrop/donkpockets{
+	pixel_x = -8;
+	pixel_y = 8
+	},
+/turf/open/floor/wood,
+/area/crew_quarters/kitchen)
 "vV" = (
 /obj/structure/flora/ausbushes/leafybush,
 /turf/open/floor/grass,
@@ -723,18 +750,6 @@
 /obj/structure/table/wood,
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
-"zb" = (
-/obj/item/reagent_containers/food/snacks/mint,
-/obj/item/storage/box/donkpockets{
-	pixel_x = 3;
-	pixel_y = 3
-	},
-/obj/structure/table/wood,
-/obj/item/seeds/poppy,
-/obj/item/seeds/poppy,
-/obj/item/seeds/poppy,
-/turf/open/floor/wood,
-/area/crew_quarters/kitchen)
 "zc" = (
 /obj/machinery/atmospherics/components/unary/vent_pump/on/layer2{
 	dir = 8;
@@ -813,12 +828,6 @@
 	dir = 1
 	},
 /turf/open/floor/grass,
-/area/crew_quarters/bar)
-"Cb" = (
-/obj/structure/sink/kitchen{
-	pixel_y = 28
-	},
-/turf/open/floor/plasteel,
 /area/crew_quarters/bar)
 "Cn" = (
 /obj/structure/flora/ausbushes/lavendergrass,
@@ -950,8 +959,14 @@
 /turf/open/floor/grass,
 /area/crew_quarters/bar)
 "JJ" = (
-/obj/item/twohanded/required/kirbyplants/random,
+/obj/item/kirbyplants/random,
 /turf/open/floor/grass,
+/area/crew_quarters/bar)
+"JV" = (
+/obj/machinery/chem_master/condimaster{
+	name = "HoochMaster 2000"
+	},
+/turf/open/floor/plasteel,
 /area/crew_quarters/bar)
 "JW" = (
 /obj/structure/flora/grass/jungle,
@@ -1015,15 +1030,6 @@
 /obj/structure/table/wood,
 /turf/open/floor/grass,
 /area/crew_quarters/bar)
-"Pu" = (
-/obj/structure/table,
-/obj/machinery/microwave{
-	pixel_x = -3;
-	pixel_y = 6
-	},
-/obj/item/storage/box/donkpockets,
-/turf/open/floor/wood,
-/area/crew_quarters/kitchen)
 "Qi" = (
 /obj/machinery/firealarm{
 	dir = 1;
@@ -1492,7 +1498,7 @@ pg
 ac
 "}
 (15,1,1) = {"
-Cb
+JV
 bD
 uD
 ru
@@ -1509,7 +1515,7 @@ ac
 "}
 (16,1,1) = {"
 ag
-bT
+ko
 hc
 ag
 ag
@@ -1564,7 +1570,7 @@ bi
 am
 AP
 dU
-zb
+lC
 Ee
 Hv
 Hv
@@ -1626,7 +1632,7 @@ am
 bU
 bl
 am
-Pu
+vA
 fJ
 kW
 kW

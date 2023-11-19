@@ -226,8 +226,7 @@
 		DA.glass = TRUE
 	if(heat_proof)
 		DA.heat_proof_finished = TRUE
-	DA.update_icon()
-	DA.update_name()
+	DA.update_appearance()
 	qdel(src)
 
 /obj/machinery/door/airlock/plasma/BlockSuperconductivity() //we don't stop the heat~
@@ -366,6 +365,8 @@
 	explosion_block = 2
 	normal_integrity = 400 // reverse engieneerd: 400 * 1.5 (sec lvl 6) = 600 = original
 	security_level = 6
+	rad_insulation = RAD_FULL_INSULATION
+	armor = list(MELEE = 30, BULLET = 30, LASER = 20, ENERGY = 100, BOMB = 10, BIO = 100, RAD = 100, FIRE = 80, ACID = 70) //only changed energy to 100
 
 //////////////////////////////////
 /*
@@ -409,6 +410,8 @@
 	normal_integrity = 500
 	security_level = 1
 	damage_deflection = 30
+	rad_insulation = RAD_FULL_INSULATION
+	armor = list(MELEE = 30, BULLET = 30, LASER = 20, ENERGY = 100, BOMB = 10, BIO = 100, RAD = 100, FIRE = 80, ACID = 70) //only changed energy to 100
 
 //////////////////////////////////
 /*
@@ -455,20 +458,17 @@
 	aiControlDisabled = AI_WIRE_DISABLED
 	req_access = list(ACCESS_BLOODCULT)
 	damage_deflection = 10
+	cut_wires_on_break = FALSE
 	var/openingoverlaytype = /obj/effect/temp_visual/cult/door
 	var/friendly = FALSE
 	var/stealthy = FALSE
 
-/obj/machinery/door/airlock/cult/Initialize()
+/obj/machinery/door/airlock/cult/Initialize(mapload)
 	. = ..()
 	new openingoverlaytype(loc)
 
 /obj/machinery/door/airlock/cult/canAIControl(mob/user)
 	return (iscultist(user) && !isAllPowerCut())
-
-/obj/machinery/door/airlock/cult/on_break()
-	if(!panel_open)
-		panel_open = TRUE
 
 /obj/machinery/door/airlock/cult/isElectrified()
 	return FALSE
@@ -500,7 +500,7 @@
 	name = "airlock"
 	desc = "It opens and closes."
 	stealthy = TRUE
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/machinery/door/airlock/cult/proc/reveal()
 	icon = initial(icon)
@@ -508,7 +508,7 @@
 	name = initial(name)
 	desc = initial(desc)
 	stealthy = initial(stealthy)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/machinery/door/airlock/cult/narsie_act()
 	return
@@ -547,7 +547,7 @@
 	desc = "An airlock hastily corrupted by blood magic, it is unusually brittle in this state."
 	normal_integrity = 150
 	damage_deflection = 5
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
+	armor = list(MELEE = 0, BULLET = 0, LASER = 0,ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 0, ACID = 0)
 
 //Pinion airlocks: Clockwork doors that only let servants of Ratvar through.
 /obj/machinery/door/airlock/clockwork
@@ -565,7 +565,7 @@
 	normal_integrity = 240
 	var/construction_state = GEAR_SECURE //Pinion airlocks have custom deconstruction
 
-/obj/machinery/door/airlock/clockwork/Initialize()
+/obj/machinery/door/airlock/clockwork/Initialize(mapload)
 	. = ..()
 	new /obj/effect/temp_visual/ratvar/door(loc)
 	new /obj/effect/temp_visual/ratvar/beam/door(loc)
@@ -600,8 +600,8 @@
 	if(src)
 		var/previouscolor = color
 		color = "#960000"
-		animate(src, color = previouscolor, time = 8)
-		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 8)
+		animate(src, color = previouscolor, time = 0.8 SECONDS)
+		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 0.8 SECONDS)
 
 /obj/machinery/door/airlock/clockwork/attackby(obj/item/I, mob/living/user, params)
 	if(!attempt_construction(I, user))

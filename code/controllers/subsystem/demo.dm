@@ -25,6 +25,9 @@ SUBSYSTEM_DEF(demo)
 	var/last_completed = 0
 
 /datum/controller/subsystem/demo/proc/write_time()
+	if(!can_fire)
+		return
+
 	var/new_time = world.time
 	if(last_written_time != new_time)
 		if(initialized)
@@ -34,6 +37,9 @@ SUBSYSTEM_DEF(demo)
 	last_written_time = new_time
 
 /datum/controller/subsystem/demo/proc/write_event_line(line)
+	if(!can_fire)
+		return
+
 	write_time()
 	if(initialized)
 		WRITE_LOG_NO_FORMAT(GLOB.demo_log, "[line]\n")
@@ -41,6 +47,9 @@ SUBSYSTEM_DEF(demo)
 		pre_init_lines += line
 
 /datum/controller/subsystem/demo/proc/write_chat(target, text)
+	if(!can_fire)
+		return
+
 	var/target_text = ""
 	if(target == GLOB.clients)
 		target_text = "world"
@@ -64,9 +73,17 @@ SUBSYSTEM_DEF(demo)
 	last_chat_message = json_encoded
 
 /datum/controller/subsystem/demo/Initialize()
+	if(!CONFIG_GET(flag/demos_enabled))
+		flags |= SS_NO_FIRE
+		can_fire = FALSE
+		marked_dirty.Cut()
+		marked_new.Cut()
+		marked_turfs.Cut()
+		return SS_INIT_SUCCESS
+
 	WRITE_LOG_NO_FORMAT(GLOB.demo_log, "demo version 1\n") // increment this if you change the format
 	if(GLOB.revdata)
-		WRITE_LOG_NO_FORMAT(GLOB.demo_log, "commit [GLOB.revdata.originmastercommit || GLOB.revdata.commit]\n")
+		WRITE_LOG_NO_FORMAT(GLOB.demo_log, "commit [GLOB.revdata.commit || GLOB.revdata.originmastercommit]\n")
 
 	// write a "snapshot" of the world at this point.
 	// start with turfs
@@ -147,7 +164,7 @@ SUBSYSTEM_DEF(demo)
 	for(var/line in pre_init_lines)
 		WRITE_LOG_NO_FORMAT(GLOB.demo_log, "[line]\n")
 
-	return ..()
+	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/demo/fire()
 	if(!src.marked_new.len && !src.marked_dirty.len && !src.marked_turfs.len && !src.del_list.len)
@@ -283,18 +300,20 @@ SUBSYSTEM_DEF(demo)
 			inted[i] += round(old_list[i] * 255)
 		color_string = jointext(inted, ",")
 	var/overlays_string = "\[]"
-	if(appearance.overlays.len)
+	var/list/appearance_overlays = appearance.overlays
+	if(appearance_overlays.len)
 		var/list/overlays_list = list()
-		for(var/i in 1 to appearance.overlays.len)
-			var/image/overlay = appearance.overlays[i]
+		for(var/i in 1 to appearance_overlays.len)
+			var/image/overlay = appearance_overlays[i]
 			overlays_list += encode_appearance(overlay, appearance, TRUE)
 		overlays_string = "\[[jointext(overlays_list, ",")]]"
 
 	var/underlays_string = "\[]"
-	if(appearance.underlays.len)
+	var/list/appearance_underlays = appearance.underlays
+	if(appearance_underlays.len)
 		var/list/underlays_list = list()
-		for(var/i in 1 to appearance.underlays.len)
-			var/image/underlay = appearance.underlays[i]
+		for(var/i in 1 to appearance_underlays.len)
+			var/image/underlay = appearance_underlays[i]
 			underlays_list += encode_appearance(underlay, appearance, TRUE)
 		underlays_string = "\[[jointext(underlays_list, ",")]]"
 
@@ -396,12 +415,23 @@ SUBSYSTEM_DEF(demo)
 	msg += "}"
 	return ..(msg)
 
+/datum/controller/subsystem/demo/get_metrics()
+	. = ..()
+	.["remaining_turfs"] = marked_turfs.len
+	.["remaining_new"] = marked_new.len
+	.["remaining_updated"] = marked_dirty.len
+	.["remaining_deleted"] = del_list.len
+
 /datum/controller/subsystem/demo/proc/mark_turf(turf/T)
+	if(!can_fire)
+		return
 	if(!isturf(T))
 		return
 	marked_turfs[T] = TRUE
 
 /datum/controller/subsystem/demo/proc/mark_new(atom/movable/M)
+	if(!can_fire)
+		return
 	if(!isobj(M) && !ismob(M))
 		return
 	if(M.gc_destroyed)
@@ -412,6 +442,8 @@ SUBSYSTEM_DEF(demo)
 
 // I can't wait for when TG ports this and they make this a #define macro.
 /datum/controller/subsystem/demo/proc/mark_dirty(atom/movable/M)
+	if(!can_fire)
+		return
 	if(!isobj(M) && !ismob(M))
 		return
 	if(M.gc_destroyed)
@@ -420,6 +452,8 @@ SUBSYSTEM_DEF(demo)
 		marked_dirty[M] = TRUE
 
 /datum/controller/subsystem/demo/proc/mark_destroyed(atom/movable/M)
+	if(!can_fire)
+		return
 	if(!isobj(M) && !ismob(M))
 		return
 	if(marked_new[M])

@@ -10,7 +10,7 @@
 	level = 1			// underfloor only
 	dir = NONE			// dir will contain dominant direction for junction pipes
 	max_integrity = 200
-	armor = list("melee" = 25, "bullet" = 10, "laser" = 10, "energy" = 100, "bomb" = 0, "bio" = 100, "rad" = 100, "fire" = 90, "acid" = 30)
+	armor = list(MELEE = 25, BULLET = 10, LASER = 10, ENERGY = 100, BOMB = 0, BIO = 100, RAD = 100, FIRE = 90, ACID = 30)
 	layer = DISPOSAL_PIPE_LAYER			// slightly lower than wires and other pipes
 	flags_1 = RAD_PROTECT_CONTENTS_1 | RAD_NO_CONTAMINATE_1
 	var/dpdir = NONE					// bitmask of pipe directions
@@ -87,7 +87,7 @@
 
 // hide called by levelupdate if turf intact status changes
 // change visibility status and force update of icon
-/obj/structure/disposalpipe/hide(var/intact)
+/obj/structure/disposalpipe/hide(intact)
 	invisibility = intact ? INVISIBILITY_MAXIMUM: 0	// hide if floor is intact
 
 // expel the held objects into a turf
@@ -115,9 +115,24 @@
 	playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
 	for(var/A in H)
 		var/atom/movable/AM = A
-		AM.forceMove(get_turf(src))
+		var/turf/Tloc = get_turf(src)
+		var/decon = FALSE
+		if(AM.density)
+			for(var/atom/atm in Tloc.contents)
+				if(ismob(atm))
+					continue
+				if(!atm.CanPass(AM))
+					atm.Bumped(AM) // Used incase getting whacked does something (Mainly for SM)
+					decon = TRUE
+					break
+		AM.forceMove(Tloc)
 		AM.pipe_eject(direction)
-		if(target)
+		if(decon && isobj(AM))
+			AM.visible_message("[AM] rams into another object instantly breaking itself!")
+			var/obj/O = AM
+			O.deconstruct(FALSE, TRUE)
+
+		if(AM && target)
 			AM.throw_at(target, eject_range, 1)
 	H.vent_gas(T)
 	qdel(H)
@@ -131,7 +146,7 @@
 
 
 /obj/structure/disposalpipe/run_obj_armor(damage_amount, damage_type, damage_flag = 0, attack_dir)
-	if(damage_flag == "melee" && damage_amount < 10)
+	if(damage_flag == MELEE && damage_amount < 10)
 		return 0
 	return ..()
 
@@ -238,7 +253,7 @@
 		pipe_type = PIPE_TYPE_NODE\
 	)
 
-/obj/structure/disposalpipe/trunk/Initialize()
+/obj/structure/disposalpipe/trunk/Initialize(mapload)
 	. = ..()
 	getlinked()
 

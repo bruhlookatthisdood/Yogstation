@@ -27,7 +27,7 @@
 	var/mob/living/silicon/robot/user // needed for process()
 	var/animation_playing = FALSE
 
-/obj/item/borg_chameleon/Initialize()
+/obj/item/borg_chameleon/Initialize(mapload)
 	. = ..()
 	friendlyName = pick(GLOB.ai_names)
 
@@ -76,8 +76,8 @@
 		for(i=1, i<=7, ++i)
 			f = user.filters[start+i]
 			animate(f, offset=f:offset, time=0, loop=3, flags=ANIMATION_PARALLEL)
-			animate(offset=f:offset-1, time=rand()*20+10)
-		if (do_after(user, 5 SECONDS, target=user) && user.cell.use(activationCost))
+			animate(offset=f:offset-1, time=rand()*20+(1 SECONDS))
+		if (do_after(user, 5 SECONDS, user) && user.cell.use(activationCost))
 			playsound(src, 'sound/effects/bamf.ogg', 100, 1, -6)
 			to_chat(user, span_notice("You are now disguised as the Nanotrasen engineering borg \"[friendlyName]\"."))
 			activate(user)
@@ -104,6 +104,7 @@
 	user.name = friendlyName
 	user.module.cyborg_base_icon = disguise
 	user.bubble_icon = "robot"
+	user.module.name = "Engineering"
 	active = TRUE
 	user.update_icons()
 	
@@ -111,7 +112,7 @@
 		return
 	if(listeningTo)
 		UnregisterSignal(listeningTo, signalCache)
-	RegisterSignal(user, signalCache, .proc/disrupt)
+	RegisterSignal(user, signalCache, PROC_REF(disrupt))
 	listeningTo = user
 
 /obj/item/borg_chameleon/proc/deactivate(mob/living/silicon/robot/user)
@@ -123,6 +124,7 @@
 	user.name = savedName
 	user.module.cyborg_base_icon = initial(user.module.cyborg_base_icon)
 	user.bubble_icon = initial(user.bubble_icon)
+	user.module.name = initial(user.module.name)
 	active = FALSE
 	user.update_icons()
 	src.user = user

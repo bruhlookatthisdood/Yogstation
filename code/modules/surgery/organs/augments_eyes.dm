@@ -14,16 +14,16 @@
 	slot = ORGAN_SLOT_HUD
 	var/HUD_type = 0
 
-/obj/item/organ/cyberimp/eyes/hud/Insert(var/mob/living/carbon/M, var/special = 0, drop_if_replaced = FALSE)
+/obj/item/organ/cyberimp/eyes/hud/Insert(mob/living/carbon/M, special = 0, drop_if_replaced = FALSE)
 	..()
 	if(HUD_type)
 		var/datum/atom_hud/H = GLOB.huds[HUD_type]
-		H.add_hud_to(M)
+		H.show_to(M)
 
-/obj/item/organ/cyberimp/eyes/hud/Remove(var/mob/living/carbon/M, var/special = 0)
+/obj/item/organ/cyberimp/eyes/hud/Remove(mob/living/carbon/M, special = 0)
 	if(HUD_type)
 		var/datum/atom_hud/H = GLOB.huds[HUD_type]
-		H.remove_hud_from(M)
+		H.hide_from(M)
 	..()
 
 /obj/item/organ/cyberimp/eyes/hud/medical
@@ -45,3 +45,15 @@
 	name = "Contraband Security HUD Implant"
 	desc = "A Cybersun Industries brand Security HUD Implant. These illicit cybernetic eye implants will display a security HUD over everything you see."
 	syndicate_implant = TRUE
+
+/obj/item/organ/cyberimp/eyes/hud/science
+	name = "Chemical Analyzer implant"
+	desc = "These cybernetic eye implants will allow rapid identification of reagents."
+
+/obj/item/organ/cyberimp/eyes/hud/science/Insert(mob/living/carbon/M, special = 0, drop_if_replaced = FALSE)
+	..()
+	ADD_TRAIT(owner, TRAIT_SEE_REAGENTS, src)
+
+/obj/item/organ/cyberimp/eyes/hud/science/Remove(mob/living/carbon/M, special = 0)
+	REMOVE_TRAIT(owner, TRAIT_SEE_REAGENTS, src)
+	..()

@@ -11,13 +11,20 @@
 //A flashy ability, good for crowd control and sowing chaos.
 /datum/action/changeling/resonant_shriek/sting_action(mob/user)
 	..()
+	if(user.movement_type & VENTCRAWLING)
+		to_chat(user, "<span class='notice'>We must exit the pipes before we can shriek!</span>")
+		return FALSE
 	for(var/mob/living/M in get_hearers_in_view(4, user))
 		if(iscarbon(M))
+			if(ishuman(M))
+				var/mob/living/carbon/human/H = M
+				if(istype(H.ears, /obj/item/clothing/ears/earmuffs))
+					continue
 			var/mob/living/carbon/C = M
 			if(!C.mind || !C.mind.has_antag_datum(/datum/antagonist/changeling))
 				C.adjustEarDamage(0, 30)
-				C.confused += 25
-				C.Jitter(50)
+				C.adjust_confusion(25 SECONDS)
+				C.adjust_jitter(50 SECONDS)
 			else
 				SEND_SOUND(C, sound('sound/effects/screech.ogg'))
 
@@ -40,6 +47,9 @@
 
 /datum/action/changeling/dissonant_shriek/sting_action(mob/user)
 	..()
+	if(user.movement_type & VENTCRAWLING)
+		to_chat(user, "<span class='notice'>We must exit the pipes before we can shriek!</span>")
+		return FALSE
 	for(var/obj/machinery/light/L in range(5, usr))
 		L.on = 1
 		L.break_light_tube()

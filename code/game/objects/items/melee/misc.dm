@@ -37,7 +37,7 @@
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	sharpness = SHARP_EDGED
 
-/obj/item/melee/synthetic_arm_blade/Initialize()
+/obj/item/melee/synthetic_arm_blade/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/butchering, 60, 80) //very imprecise
 
@@ -50,7 +50,7 @@
 	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
 	flags_1 = CONDUCT_1
-	obj_flags = UNIQUE_RENAME
+	obj_flags = UNIQUE_RENAME | UNIQUE_REDESC
 	force = 15
 	throwforce = 10
 	wound_bonus = 10
@@ -64,20 +64,23 @@
 
 /obj/item/melee/cutlass
 	name = "cutlass"
-	desc = "A true pirates weapon, seems somewhat dull though"
+	desc = "YAAAAAR! A fine weapon for a pirate, fit for slicing land-lubbers." //All pirate weapons must have pirate quips from now on it is non-negotiable
 	icon = 'icons/obj/weapons/swords.dmi'
 	icon_state = "metalcutlass"
 	item_state = "metalcutlass"
 	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
-	force = 16
-	throwforce = 5
-	w_class = WEIGHT_CLASS_BULKY
+	slot_flags = ITEM_SLOT_BELT
+	force = 18
+	throwforce = 10
+	w_class = WEIGHT_CLASS_HUGE
+	block_chance = 30
+	sharpness = SHARP_EDGED
 	attack_verb = list("slashed", "cut")
 	hitsound = 'sound/weapons/rapierhit.ogg'
 	materials = list(/datum/material/iron = 1000)
 
-/obj/item/melee/sabre/Initialize()
+/obj/item/melee/sabre/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/butchering, 30, 95, 5) //fast and effective, but as a sword, it might damage the results.
 
@@ -123,8 +126,8 @@
 		var/speedbase = abs((4 SECONDS) / limbs_to_dismember.len)
 		for(bodypart in limbs_to_dismember)
 			i++
-			addtimer(CALLBACK(src, .proc/suicide_dismember, user, bodypart), speedbase * i)
-	addtimer(CALLBACK(src, .proc/manual_suicide, user), (5 SECONDS) * i)
+			addtimer(CALLBACK(src, PROC_REF(suicide_dismember), user, bodypart), speedbase * i)
+	addtimer(CALLBACK(src, PROC_REF(manual_suicide), user), (5 SECONDS) * i)
 	return MANUAL_SUICIDE
 
 /obj/item/melee/sabre/proc/suicide_dismember(mob/living/user, obj/item/bodypart/affecting)
@@ -218,7 +221,7 @@
 	var/list/desc = get_hit_description(target, user)
 
 	var/obj/item/bodypart/affecting = target.get_bodypart(user.zone_selected)
-	var/armor_block = target.run_armor_check(affecting, "melee")
+	var/armor_block = target.run_armor_check(affecting, MELEE)
 	target.apply_damage(stamina_damage, STAMINA, user.zone_selected, armor_block)
 	var/current_stamina_damage = target.getStaminaLoss()
 
@@ -237,14 +240,14 @@
 		target.Knockdown(knockdown_time_carbon)
 		target.visible_message(desc["visible"], desc["local"])
 		return
-	
+
 	if(armor_block >= block_threshold)
 		target.visible_message(desc["visible"], desc["local"])
 		playsound(target, 'sound/weapons/genhit.ogg', 50, 1)
 		return
 
 	// Special effects
-	if(affecting.stamina_dam >= 50 && (istype(affecting, /obj/item/bodypart/l_leg) || istype(affecting, /obj/item/bodypart/r_leg)))
+	if(affecting?.stamina_dam >= 50 && (istype(affecting, /obj/item/bodypart/l_leg) || istype(affecting, /obj/item/bodypart/r_leg)))
 		desc = get_stun_description(target, user)
 		target.Knockdown(knockdown_time_carbon)
 
@@ -328,7 +331,8 @@
 		to_chat(user, "<span class ='danger'>You hit yourself over the head.</span>")
 		user.Paralyze(knockdown_time_carbon * force)
 		user.adjustStaminaLoss(stamina_damage)
-		additional_effects_carbon(user) // user is the target here
+		if(iscarbon(user))
+			additional_effects_carbon(user) // user is the target here
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
 			H.apply_damage(2*force, BRUTE, BODY_ZONE_HEAD)
@@ -359,6 +363,19 @@
 			var/wait_desc = get_wait_description()
 			if (wait_desc)
 				to_chat(user, wait_desc)
+
+/obj/item/melee/classic_baton/donkbat
+	name = "toy baseball bat"
+	desc = "A colorful foam baseball bat. The label on the handle reads Donksoft. Feels...heavy."
+	icon = 'icons/obj/toy.dmi'
+	icon_state = "baseballbat_donk"
+	item_state = "baseball_bat_donk"
+	lefthand_file = 'icons/mob/inhands/weapons/melee_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/weapons/melee_righthand.dmi'
+	w_class = WEIGHT_CLASS_NORMAL
+	force = 6
+	stamina_damage = 40
+
 
 /obj/item/melee/classic_baton/telescopic
 	name = "telescopic baton"
@@ -394,7 +411,7 @@
 	else
 		playsound(src, on_sound, 50, 1)
 		add_fingerprint(user)
-	sleep(3)
+	sleep(0.3 SECONDS)
 	if (!QDELETED(H))
 		if(!QDELETED(B))
 			H.internal_organs -= B
@@ -438,8 +455,7 @@
 	w_class = WEIGHT_CLASS_SMALL
 	item_flags = NONE
 	force = 5
-
-	cooldown = 25
+	cooldown = 2.5 SECONDS
 	stamina_damage = 85
 	affect_silicon = TRUE
 	on_sound = 'sound/weapons/contractorbatonextend.ogg'
@@ -472,7 +488,8 @@
 	playsound(get_turf(src), on_stun_sound, 75, 1, -1)
 	target.Knockdown(knockdown_time_carbon)
 	target.adjustStaminaLoss(stamina_damage)
-	additional_effects_carbon(target, user)
+	if(iscarbon(target))
+		additional_effects_carbon(target, user)
 
 	log_combat(user, target, "stunned", src)
 	add_fingerprint(user)
@@ -482,15 +499,39 @@
 	if(!iscarbon(user))
 		target.LAssailant = null
 	else
-		target.LAssailant = user
+		target.LAssailant = WEAKREF(user)
 	cooldown_check = world.time + cooldown
 
 /obj/item/melee/classic_baton/telescopic/contractor_baton/get_wait_description()
 	return span_danger("The baton is still charging!")
 
-/obj/item/melee/classic_baton/telescopic/contractor_baton/additional_effects_carbon(mob/living/target, mob/living/user)
-	target.Jitter(20)
-	target.stuttering += 20
+/obj/item/melee/classic_baton/telescopic/contractor_baton/additional_effects_carbon(mob/living/carbon/target, mob/living/user)
+	target.set_jitter_if_lower(40 SECONDS)
+	target.set_stutter_if_lower(40 SECONDS)
+	if(HAS_TRAIT_FROM(target, TRAIT_INCAPACITATED, STAMINA))
+		target.silent += 5
+
+/obj/item/melee/classic_baton/secconbaton
+	name = "billy club"
+	desc = "A dark wooden club with the Space Queen's crest burned onto its bottom. Its wrist strap will help keep it in your hands and out of crooks'."
+	icon_state = "secconbaton"
+	item_state = "secconbaton"
+	force = 10
+	stamina_damage = 15
+	var/tighten = FALSE
+	actions_types = list(/datum/action/item_action/wrist_strap)
+
+/obj/item/melee/classic_baton/secconbaton/ui_action_click(mob/user)
+	tighten = !tighten
+	if(tighten)
+		user.balloon_alert(user, "Wrist strap tightened.")
+		ADD_TRAIT(src, TRAIT_NODROP, WRIST_STRAP_TRAIT)
+	else
+		REMOVE_TRAIT(src, TRAIT_NODROP, WRIST_STRAP_TRAIT)
+		user.balloon_alert(user, "Wrist strap loosened.")
+
+/datum/action/item_action/wrist_strap
+	name = "Adjust Wrist Strap"
 
 /obj/item/melee/supermatter_sword
 	name = "supermatter sword"
@@ -508,7 +549,7 @@
 	var/balanced = 1
 	force_string = "INFINITE"
 
-/obj/item/melee/supermatter_sword/Initialize()
+/obj/item/melee/supermatter_sword/Initialize(mapload)
 	. = ..()
 	shard = new /obj/machinery/power/supermatter_crystal(src)
 	qdel(shard.countdown)
@@ -557,7 +598,7 @@
 	span_italics("You hear a loud crack as you are washed with a wave of heat."))
 	consume_everything()
 
-/obj/item/melee/supermatter_sword/bullet_act(obj/item/projectile/P)
+/obj/item/melee/supermatter_sword/bullet_act(obj/projectile/P)
 	visible_message(span_danger("[P] smacks into [src] and rapidly flashes to ash."),\
 	span_italics("You hear a loud crack as you are washed with a wave of heat."))
 	consume_everything(P)
@@ -606,14 +647,18 @@
 
 /obj/item/melee/singularity_sword/afterattack(target, mob/user, proximity_flag)
 	. = ..()
-	if(proximity_flag && istype(target, /mob))
-		var/mob/M = target
-		var/turf/T = get_turf(M)
-		M.visible_message(span_danger("[target] is consumed by the singularity!"))
-		new /obj/singularity(T)
-		M.gib()
+	if(proximity_flag)
+		var/turf/T = get_turf(target)
+		var/obj/singularity/gravitational/S = new(T)
+		S.consume(target)
 	else
 		return FALSE
+
+/obj/item/melee/singularity_sword/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
+	. = ..()
+	var/turf/T = get_turf(hit_atom)
+	var/obj/singularity/gravitational/S = new(T)
+	S.consume(hit_atom)
 
 /// Simple whip that does additional damage(8 brute to be exact) to simple animals
 /obj/item/melee/curator_whip
@@ -652,7 +697,7 @@
 	var/on = FALSE
 	var/datum/beam/beam
 
-/obj/item/melee/roastingstick/Initialize()
+/obj/item/melee/roastingstick/Initialize(mapload)
 	. = ..()
 	if (!ovens)
 		ovens = typecacheof(list(/obj/singularity, /obj/machinery/power/supermatter_crystal, /obj/structure/bonfire, /obj/structure/destructible/clockwork/massive/ratvar, /obj/structure/destructible/clockwork/massive/celestial_gateway))
@@ -683,21 +728,20 @@
 			held_sausage = target
 		else
 			to_chat(user, span_warning("[target] doesn't seem to want to get on [src]!"))
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/item/melee/roastingstick/attack_hand(mob/user)
 	..()
 	if (held_sausage)
 		user.put_in_hands(held_sausage)
 		held_sausage = null
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
-/obj/item/melee/roastingstick/update_icon()
+/obj/item/melee/roastingstick/update_overlays()
 	. = ..()
-	cut_overlays()
 	if (held_sausage)
 		var/mutable_appearance/sausage = mutable_appearance(icon, "roastingstick_sausage")
-		add_overlay(sausage)
+		. += sausage
 
 /obj/item/melee/roastingstick/proc/extend(user)
 	to_chat(user, "<span class ='warning'>You extend [src].</span>")
@@ -714,7 +758,7 @@
 /obj/item/melee/roastingstick/handle_atom_del(atom/target)
 	if (target == held_sausage)
 		held_sausage = null
-		update_icon()
+		update_appearance(UPDATE_ICON)
 
 /obj/item/melee/roastingstick/afterattack(atom/target, mob/user, proximity)
 	. = ..()
@@ -733,7 +777,7 @@
 			playsound(src.loc, 'sound/weapons/batonextend.ogg', 50, 1)
 		else
 			return
-		if(do_after(user, 10 SECONDS, target = user))
+		if(do_after(user, 10 SECONDS, user))
 			finish_roasting(user, target)
 		else
 			QDEL_NULL(beam)
@@ -745,4 +789,4 @@
 	held_sausage.add_atom_colour(rgb(103,63,24), FIXED_COLOUR_PRIORITY)
 	held_sausage.name = "[target.name]-roasted [held_sausage.name]"
 	held_sausage.desc = "[held_sausage.desc] It has been cooked to perfection on \a [target]."
-	update_icon()
+	update_appearance(UPDATE_ICON)

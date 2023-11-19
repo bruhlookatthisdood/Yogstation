@@ -15,11 +15,12 @@
 GLOBAL_LIST_EMPTY(telecomms_list)
 
 /obj/machinery/telecomms
+	name = "telecommunications machine"
 	icon = 'icons/obj/machines/telecomms.dmi'
 	critical_machine = TRUE
 	var/list/links = list() // list of machines this machine is linked to
 	var/traffic = 0 // value increases as traffic increases
-	var/netspeed = 5 // how much traffic to lose per tick (50 gigabytes/second * netspeed)
+	var/netspeed = 2.5 // how much traffic to lose per second (50 gigabytes/second * netspeed)
 	var/net_efective = 100 //yogs percentage of netspeed aplied
 	var/list/autolinkers = list() // list of text/number values to link with
 	var/id = "NULL" // identification string
@@ -120,19 +121,23 @@ GLOBAL_LIST_EMPTY(telecomms_list)
 					T.links |= src
 
 
-/obj/machinery/telecomms/update_icon()
-	cut_overlays()
-	if(on)
-		var/mutable_appearance/on_overlay
-		if(on_icon)
-			on_overlay = mutable_appearance(icon, on_icon)
-		else
-			on_overlay = mutable_appearance(icon, "[initial(icon_state)]_on")
-		add_overlay(on_overlay)
+/obj/machinery/telecomms/update_icon_state()
+	. = ..()
 	if(panel_open)
 		icon_state = "[initial(icon_state)]_o"
 	else
 		icon_state = initial(icon_state)
+
+/obj/machinery/telecomms/update_overlays()
+	. = ..()
+	if(!on)
+		return
+	var/mutable_appearance/on_overlay
+	if(on_icon)
+		on_overlay = mutable_appearance(icon, on_icon)
+	else
+		on_overlay = mutable_appearance(icon, "[initial(icon_state)]_on")
+	. += on_overlay
 
 /obj/machinery/telecomms/proc/update_power()
 
@@ -173,11 +178,11 @@ GLOBAL_LIST_EMPTY(telecomms_list)
 		if(generates_heat && env.heat_capacity())
 			env.set_temperature(env.return_temperature() + deltaT * heatoutput / env.heat_capacity())   //yogs end
 
-/obj/machinery/telecomms/process()
+/obj/machinery/telecomms/process(delta_time)
 	update_power()
 
 	// Update the icon
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	update_speed()
 
 
@@ -189,12 +194,13 @@ GLOBAL_LIST_EMPTY(telecomms_list)
 	if(prob(100/severity) && !(stat & EMPED))
 		stat |= EMPED
 		var/duration = (300 * 10)/severity
-		addtimer(CALLBACK(src, .proc/de_emp), rand(duration - 20, duration + 20))
+		addtimer(CALLBACK(src, PROC_REF(de_emp)), rand(duration - 20, duration + 20))
 
 /obj/machinery/telecomms/proc/de_emp()
 	stat &= ~EMPED
 
-/obj/machinery/telecomms/emag_act()
+/obj/machinery/telecomms/emag_act(mob/user, obj/item/card/emag/emag_card)
 	obj_flags |= EMAGGED
 	visible_message(span_notice("Sparks fly out of the [src]!"))
 	traffic += 50
+	return TRUE

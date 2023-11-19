@@ -45,7 +45,7 @@
 /mob/living/simple_animal/bot/floorbot/Initialize(mapload, new_toolbox_color)
 	. = ..()
 	toolbox_color = new_toolbox_color
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	var/datum/job/engineer/J = new/datum/job/engineer
 	access_card.access += J.get_access()
 	prev_access = access_card.access
@@ -55,11 +55,11 @@
 
 /mob/living/simple_animal/bot/floorbot/turn_on()
 	. = ..()
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /mob/living/simple_animal/bot/floorbot/turn_off()
 	..()
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /mob/living/simple_animal/bot/floorbot/bot_reset()
 	..()
@@ -67,7 +67,7 @@
 	oldloc = null
 	ignore_list = list()
 	anchored = FALSE
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /mob/living/simple_animal/bot/floorbot/set_custom_texts()
 	text_hack = "You corrupt [name]'s construction protocols."
@@ -128,8 +128,8 @@
 	else
 		..()
 
-/mob/living/simple_animal/bot/floorbot/emag_act(mob/user)
-	..()
+/mob/living/simple_animal/bot/floorbot/emag_act(mob/user, obj/item/card/emag/emag_card)
+	. = ..()
 	if(emagged == 2)
 		if(user)
 			to_chat(user, span_danger("[src] buzzes and beeps."))
@@ -320,7 +320,7 @@
 		icon_state = "[toolbox_color]floorbot-c"
 		visible_message(span_notice("[targetdirection ? "[src] begins installing a bridge plating." : "[src] begins to repair the hole."] "))
 		mode = BOT_REPAIRING
-		sleep(50)
+		sleep(5 SECONDS)
 		if(mode == BOT_REPAIRING && src.loc == target_turf)
 			if(autotile) //Build the floor and include a tile.
 				target_turf.PlaceOnTop(/turf/open/floor/plasteel, flags = CHANGETURF_INHERIT_AIR)
@@ -335,7 +335,7 @@
 			icon_state = "[toolbox_color]floorbot-c"
 			mode = BOT_REPAIRING
 			visible_message(span_notice("[src] begins repairing the floor."))
-			sleep(50)
+			sleep(5 SECONDS)
 			if(mode == BOT_REPAIRING && F && src.loc == F)
 				F.broken = FALSE
 				F.burnt = FALSE
@@ -346,7 +346,7 @@
 			icon_state = "[toolbox_color]floorbot-c"
 			mode = BOT_REPAIRING
 			visible_message(span_notice("[src] begins replacing the floor tiles."))
-			sleep(50)
+			sleep(5 SECONDS)
 			if(mode == BOT_REPAIRING && F && src.loc == F)
 				F.broken = FALSE
 				F.burnt = FALSE
@@ -355,11 +355,12 @@
 				if(specialtiles == 0)
 					speak("Requesting refill of custom floortiles to continue replacing.")
 	mode = BOT_IDLE
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	anchored = FALSE
 	target = null
 
-/mob/living/simple_animal/bot/floorbot/update_icon()
+/mob/living/simple_animal/bot/floorbot/update_icon_state()
+	. = ..()
 	icon_state = "[toolbox_color]floorbot[on]"
 
 
@@ -384,7 +385,7 @@
 	..()
 
 /obj/machinery/bot_core/floorbot
-	req_one_access = list(ACCESS_CONSTRUCTION, ACCESS_ROBOTICS)
+	req_one_access = list(ACCESS_CONSTRUCTION, ACCESS_ROBO_CONTROL)
 
 /mob/living/simple_animal/bot/floorbot/UnarmedAttack(atom/A)
 	if(isturf(A))

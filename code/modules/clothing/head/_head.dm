@@ -7,16 +7,18 @@
 	slot_flags = ITEM_SLOT_HEAD
 	var/blockTracking = 0 //For AI tracking
 	var/can_toggle = null
+	/// Can land on someones head
+	var/hattable = TRUE
 	dynamic_hair_suffix = "+generic"
 
-/obj/item/clothing/head/Initialize()
+/obj/item/clothing/head/Initialize(mapload)
 	. = ..()
 	if(ishuman(loc) && dynamic_hair_suffix)
 		var/mob/living/carbon/human/H = loc
 		H.update_hair()
 
 /obj/item/clothing/head/worn_overlays(isinhands = FALSE)
-	. = list()
+	. = ..()
 	if(!isinhands)
 		if(damaged_clothes)
 			. += mutable_appearance('icons/effects/item_damage.dmi', "damagedhelmet")
@@ -28,3 +30,17 @@
 	if(ismob(loc))
 		var/mob/M = loc
 		M.update_inv_head()
+
+/obj/item/clothing/head/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
+	. = ..()
+	if(!hattable)
+		return
+	if(throwingdatum?.thrower?.zone_selected != BODY_ZONE_HEAD && throwingdatum?.thrower?.a_intent != INTENT_HELP)
+		return
+	if(ishuman(hit_atom))
+		var/mob/living/carbon/human/H = hit_atom
+		if(prob(33) && H.equip_to_slot_if_possible(src, ITEM_SLOT_HEAD))
+			H.visible_message("The [src] lands gracefully on [H]'s head")
+			return TRUE
+		H.visible_message("The [src] hits [H]'s head")
+	

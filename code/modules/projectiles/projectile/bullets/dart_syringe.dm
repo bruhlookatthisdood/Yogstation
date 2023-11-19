@@ -1,38 +1,41 @@
-/obj/item/projectile/bullet/dart
+/obj/projectile/bullet/reusable/dart
 	name = "dart"
 	icon_state = "cbbolt"
 	damage = 6
 	var/piercing = FALSE
 
-/obj/item/projectile/bullet/dart/Initialize()
+/obj/projectile/bullet/reusable/dart/Initialize(mapload)
 	. = ..()
-	create_reagents(50, NO_REACT)
 
-/obj/item/projectile/bullet/dart/on_hit(atom/target, blocked = FALSE)
-	if(iscarbon(target))
-		var/mob/living/carbon/M = target
-		if(blocked != 100) // not completely blocked
-			if(M.can_inject(null, FALSE, def_zone, piercing)) // Pass the hit zone to see if it can inject by whether it hit the head or the body.
-				..()
-				reagents.reaction(M, INJECT)
-				reagents.trans_to(M, reagents.total_volume)
-				return BULLET_ACT_HIT
-			else
-				blocked = 100
-				target.visible_message(span_danger("\The [src] was deflected!"), \
-									   span_userdanger("You were protected against \the [src]!"))
+/obj/projectile/bullet/reusable/dart/proc/add_dart(obj/item/reagent_containers/new_dart, syrpierce)
+	piercing = syrpierce
+	ammo_type = new_dart
+	new_dart.forceMove(src)
+	name = new_dart.name
 
-	..(target, blocked)
-	DISABLE_BITFIELD(reagents.flags, NO_REACT)
-	reagents.handle_reactions()
-	return BULLET_ACT_HIT
+/obj/projectile/bullet/reusable/dart/handle_drop(mob/living/carbon/target, blocked)
+	if(dropped || !isitem(ammo_type) || !iscarbon(target))
+		return ..()
 
-/obj/item/projectile/bullet/dart/metalfoam/Initialize()
-	. = ..()
-	reagents.add_reagent(/datum/reagent/aluminium, 15)
-	reagents.add_reagent(/datum/reagent/foaming_agent, 5)
-	reagents.add_reagent(/datum/reagent/toxin/acid/fluacid, 5)
+	if(blocked >= 100 || !target.can_inject(null, FALSE, def_zone, piercing) || !target.embed_object(ammo_type, def_zone, FALSE))  // The bulk of the code to actualy embbed the dart is here, its all stacked up so we don't have to copy the fail text multiple times
+		target.visible_message(span_danger("\The [ammo_type] was deflected!"), \
+		span_userdanger("You were protected against \the [ammo_type]!"))
+	else
+		dropped = TRUE // If we got here, the dart should already be embedded so we just need to mark it as dropped to prevent further handle_drop stuff from messing it up
 
-/obj/item/projectile/bullet/dart/syringe
+	return ..() // Run further handle_drop stuff, for if the syringe doesn't embbed in the target
+
+/obj/projectile/bullet/reusable/dart/syringe
 	name = "syringe"
 	icon_state = "syringeproj"
+
+/obj/projectile/bullet/reusable/dart/syringe/blowgun
+	name = "syringe"
+	icon_state = "syringeproj"
+	range = 2
+
+/obj/projectile/bullet/reusable/dart/hidden
+	name = "beanbag slug"
+	icon_state = "bullet" //So it doesn't look like a goddamned syringe
+	stamina = 5 // gotta act like we did stamina
+	sharpness = SHARP_NONE

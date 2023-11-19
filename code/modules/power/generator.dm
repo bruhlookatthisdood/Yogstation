@@ -22,11 +22,8 @@
 	find_circs()
 	connect_to_network()
 	SSair.atmos_machinery += src
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	component_parts = list(new /obj/item/circuitboard/machine/generator)
-
-/obj/machinery/power/generator/ComponentInitialize()
-	. = ..()
 	AddComponent(/datum/component/simple_rotation,ROTATION_ALTCLICK | ROTATION_CLOCKWISE | ROTATION_COUNTERCLOCKWISE | ROTATION_VERBS )
 
 /obj/machinery/power/generator/Destroy()
@@ -34,29 +31,32 @@
 	SSair.atmos_machinery -= src
 	return ..()
 
-/obj/machinery/power/generator/update_icon()
-	cut_overlays()
-	SSvis_overlays.remove_vis_overlay(src, managed_vis_overlays)
-
+/obj/machinery/power/generator/update_icon_state()
+	. = ..()
 	if(stat & (BROKEN))
 		icon_state = "teg-broken"
 		return
-	if(hot_circ && cold_circ)
-		icon_state = "teg-assembled"
-	else
+	if(!hot_circ || !cold_circ)
 		icon_state = "teg-unassembled"
-		if(panel_open)
-			add_overlay("teg-panel")
 		return
-		
+	icon_state = "teg-assembled"
+
+/obj/machinery/power/generator/update_overlays()
+	. = ..()
+	SSvis_overlays.remove_vis_overlay(src, managed_vis_overlays)
+	if(stat & (BROKEN))
+		return
+
+	if(!hot_circ || !cold_circ)
+		if(panel_open)
+			. += "teg-panel"
+		return
 	if(!powernet)
-		add_overlay("teg-nogrid")
-	if(stat & (NOPOWER))
-		return 
-	else
-		var/L = min(round(lastgenlev/100000),11)
-		if(L != 0)
-			SSvis_overlays.add_vis_overlay(src, icon, "teg-op[L]", ABOVE_LIGHTING_LAYER, ABOVE_LIGHTING_PLANE, dir)
+		. += "teg-nogrid"
+
+	var/L = min(round(lastgenlev/100000), 11)
+	if(L != 0)
+		SSvis_overlays.add_vis_overlay(src, icon, "teg-op[L]", ABOVE_LIGHTING_LAYER, ABOVE_LIGHTING_PLANE, dir)
 
 #define GENRATE 800		// generator output coefficient from Q
 
@@ -93,6 +93,7 @@
 
 				//produce electricity
 				lastgen += (energy_transfer*efficiency) * powermodifier
+				lastgen = max(lastgen, 0)
 
 				//transfer rest of energy into waste heat/chill
 				internal_temp = cold_subsection_temp + energy_transfer * (1 - efficiency) / (internal_heat_cap * 2)
@@ -108,7 +109,7 @@
 			var/datum/gas_mixture/cold_circ_air1 = cold_circ.airs[1]
 			cold_circ_air1.merge(cold_air)
 
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 	src.updateDialog()
 
@@ -118,6 +119,7 @@
 	add_avail(power_output)
 	lastgenlev = power_output
 	lastgen -= power_output
+	lastgen = max(lastgen, 0)
 	..()
 
 /obj/machinery/power/generator/proc/get_menu(include_link = TRUE)
@@ -220,7 +222,7 @@
 				to_chat(user, span_notice("You start removing the circulators..."))
 				if(I.use_tool(src, user, 30, volume=50))
 					kill_circs()
-					update_icon()
+					update_appearance(UPDATE_ICON)
 					to_chat(user, span_notice("You disconnect [src]'s circulator links."))
 					playsound(src, 'sound/misc/box_deploy.ogg', 50)
 				return TRUE
@@ -246,7 +248,7 @@
 		kill_circs()
 	connect_to_network()
 	to_chat(user, span_notice("You [anchored?"secure":"unsecure"] [src]."))
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	return TRUE
 
 /obj/machinery/power/generator/screwdriver_act(mob/user, obj/item/I)
@@ -261,7 +263,7 @@
 	panel_open = !panel_open
 	I.play_tool_sound(src)
 	to_chat(user, span_notice("You [panel_open?"open":"close"] the panel on [src]."))
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	return TRUE
 
 /obj/machinery/power/generator/crowbar_act(mob/user, obj/item/I)
@@ -284,11 +286,11 @@
 /obj/machinery/power/generator/proc/kill_circs()
 	if(hot_circ)
 		hot_circ.generator = null
-		hot_circ.update_icon()
+		hot_circ.update_appearance(UPDATE_ICON)
 		hot_circ = null
 	if(cold_circ)
 		cold_circ.generator = null
-		cold_circ.update_icon()
+		cold_circ.update_appearance(UPDATE_ICON)
 		cold_circ = null
 
 /obj/machinery/power/generator/obj_break(damage_flag)

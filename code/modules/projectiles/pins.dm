@@ -23,6 +23,8 @@
 	if(proximity_flag)
 		if(istype(target, /obj/item/gun))
 			var/obj/item/gun/G = target
+			if(G.no_pin_required)
+				return
 			if(G.pin && (force_replace || G.pin.pin_removeable))
 				G.pin.forceMove(get_turf(G))
 				if(!G.pin.gun_remove(user))
@@ -37,12 +39,13 @@
 			else
 				to_chat(user, "<span class ='notice'>This firearm already has a firing pin installed.</span>")
 
-/obj/item/firing_pin/emag_act(mob/user)
+/obj/item/firing_pin/emag_act(mob/user, obj/item/card/emag/emag_card)
 	if(obj_flags & EMAGGED)
-		return
+		return FALSE
 	obj_flags |= EMAGGED
 	to_chat(user, span_notice("You override the authentication mechanism."))
-
+	return TRUE
+	
 ///what do we do when we are being added to a gun
 /obj/item/firing_pin/proc/gun_insert(mob/living/user, obj/item/gun/G)
 	gun = G
@@ -77,6 +80,13 @@
 	name = "magic crystal shard"
 	desc = "A small enchanted shard which allows magical weapons to fire."
 
+/obj/item/firing_pin/clockie
+	name = "clockwork crystal shard"
+	desc = "A small enchanted shard which allows followers of Ratvar to use their weapons."
+
+///can the pin be used by whoever is firing its gun
+/obj/item/firing_pin/clockie/pin_auth(mob/living/user)
+	return is_clockcult(user)
 
 // Test pin, works only near firing range.
 /obj/item/firing_pin/test_range
@@ -156,8 +166,8 @@
 // fun pin
 // for when you need a gun to not be fired by anyone else ever
 /obj/item/firing_pin/fucked
-	name = "Syndicate Ultrasecure Firing Pin"
-	desc = "Get fuuuuuuuuucked."
+	name = "syndicate ultrasecure firing pin"
+	desc = "Get fucked!"
 	selfdestruct = TRUE
 
 /obj/item/firing_pin/fucked/pin_auth(mob/living/user)

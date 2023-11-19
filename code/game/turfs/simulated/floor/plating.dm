@@ -16,6 +16,7 @@
 	barefootstep = FOOTSTEP_HARD_BAREFOOT
 	clawfootstep = FOOTSTEP_HARD_CLAW
 	heavyfootstep = FOOTSTEP_GENERIC_HEAVY
+	grime = TRUE
 
 	FASTDMM_PROP(\
 		pipe_astar_cost = 1\
@@ -33,7 +34,7 @@
 	else
 		. += span_notice("You might be able to build ontop of it with some <i>tiles</i>...")
 
-/turf/open/floor/plating/Initialize()
+/turf/open/floor/plating/Initialize(mapload)
 	if (!broken_states)
 		broken_states = list("platingdmg1", "platingdmg2", "platingdmg3")
 	if (!burnt_states)
@@ -44,8 +45,9 @@
 	else
 		icon_plating = initial(icon_state)
 
-/turf/open/floor/plating/update_icon()
-	if(!..())
+/turf/open/floor/plating/update_icon_state()
+	. = ..()
+	if(!.)
 		return
 	if(!broken && !burnt)
 		icon_state = icon_plating //Because asteroids are 'platings' too.
@@ -76,7 +78,7 @@
 			return
 		else
 			to_chat(user, span_notice("You begin reinforcing the floor..."))
-			if(do_after(user, 3 SECONDS, target = src))
+			if(do_after(user, 3 SECONDS, src))
 				if (R.get_amount() >= 1 && !istype(src, /turf/open/floor/engine))
 					PlaceOnTop(/turf/open/floor/engine, flags = CHANGETURF_INHERIT_AIR)
 					playsound(src, 'sound/items/deconstruct.ogg', 80, 1)
@@ -118,6 +120,20 @@
 
 /turf/open/floor/plating/make_plating()
 	return
+
+/turf/open/floor/plating/broken
+	icon_state = "platingdmg1"
+	broken = TRUE
+
+/turf/open/floor/plating/broken/two
+	icon_state = "platingdmg2"
+
+/turf/open/floor/plating/broken/three
+	icon_state = "platingdmg3"
+
+/turf/open/floor/plating/burnt
+	icon_state = "panelscorched"
+	burnt = TRUE
 
 /turf/open/floor/plating/foam
 	name = "metal foam plating"

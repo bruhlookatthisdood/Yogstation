@@ -4,7 +4,6 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 	name = "\improper AI control console"
 	desc = "Used for accessing the central AI repository from which AIs can be downloaded or uploaded."
 	req_access = list(ACCESS_RD)
-	circuit = /obj/item/circuitboard/computer/aifixer
 	icon_keyboard = "tech_key"
 	icon_screen = "ai-fixer"
 	light_color = LIGHT_COLOR_PINK
@@ -47,6 +46,10 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 		if(!brain.brainmob)
 			to_chat(user, span_warning("[W] is not active!"))
 			return ..()
+		if(brain.syndicate_mmi)
+			to_chat(user, span_warning("This MMI lacks the support to be used for the creation of AIs."))
+			return ..()
+
 		SSticker.mode.remove_antag_for_borging(brain.brainmob.mind)
 		if(!istype(brain.laws, /datum/ai_laws/ratvar))
 			remove_servant_of_ratvar(brain.brainmob, TRUE)
@@ -59,7 +62,7 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 			A = new /mob/living/silicon/ai(loc, brain.laws, brain.brainmob)
 		else
 			A = new /mob/living/silicon/ai(loc, laws, brain.brainmob)
-		
+
 		A.relocate(TRUE)
 
 		if(brain.force_replace_ai_name)
@@ -90,12 +93,13 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 
 	return ..()
 
-/obj/machinery/computer/ai_control_console/emag_act(mob/user)
+/obj/machinery/computer/ai_control_console/emag_act(mob/user, obj/item/card/emag/emag_card)
 	if(obj_flags & EMAGGED)
-		return
-	to_chat(user, span_warning("You bypass the access restrictions"))
-	authenticated = TRUE
+		return FALSE
 	obj_flags |= EMAGGED
+	authenticated = TRUE
+	to_chat(user, span_warning("You bypass the access restrictions."))
+	return TRUE
 
 /obj/machinery/computer/ai_control_console/process()
 	if(stat & (BROKEN|NOPOWER|EMPED))
@@ -107,7 +111,7 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 		download_warning = TRUE
 	if(downloading && download_progress >= 100)
 		finish_download()
-	
+
 	if(downloading)
 		if(!downloading.can_download)
 			stop_download()
@@ -128,7 +132,7 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 		data["cleared_for_use"] = FALSE
 		return data
 
-	data["cleared_for_use"] = TRUE 
+	data["cleared_for_use"] = TRUE
 	data["authenticated"] = authenticated
 
 	if(issilicon(user))
@@ -166,7 +170,7 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 
 					data["user_image"] = SSassets.transport.get_asset_url("photo_[md5]_cropped.png")
 		data["has_access"] = check_access(user.get_idcard())
-	
+
 	if(obj_flags & EMAGGED)
 		data["username"] = "ERROR"
 		data["has_access"] = TRUE
@@ -178,7 +182,7 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 	if(intellicard && intellicard.AI)
 		data["intellicard_ai"] = intellicard.AI.real_name
 		data["intellicard_ai_health"] = intellicard.AI.health
-	else 
+	else
 		data["intellicard_ai"] = null
 		data["intellicard_ai_health"] = 0
 
@@ -201,20 +205,25 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 
 	for(var/mob/living/silicon/ai/A in GLOB.ai_list)
 		var/being_hijacked = A.hijacking ? TRUE : FALSE
-		data["ais"] += list(list("name" = A.name, "ref" = REF(A), "can_download" = A.can_download, "health" = A.health, "active" = A.mind ? TRUE : FALSE, "being_hijacked" = being_hijacked, "in_core" = istype(A.loc, /obj/machinery/ai/data_core)))
+		var/being_cogged = A.cogging ? TRUE : FALSE
+		data["ais"] += list(list("name" = A.name, "ref" = REF(A), "can_download" = A.can_download, "health" = A.health, "active" = A.mind ? TRUE : FALSE, "being_hijacked" = being_hijacked, "being_cogged" = being_cogged, "in_core" = istype(A.loc, /obj/machinery/ai/data_core)))
 
 	data["is_infiltrator"] = is_infiltrator(user)
+
+	data["is_servant_of_ratvar"] = is_servant_of_ratvar(user)
 
 	return data
 
 /obj/machinery/computer/ai_control_console/proc/finish_download()
+	if(!is_station_level(z))
+		return
 	if(intellicard)
 		if(!isaicore(downloading.loc))
 			stop_download(TRUE)
 			return
 		downloading.transfer_ai(AI_TRANS_TO_CARD, user_downloading, null, intellicard)
 		intellicard.forceMove(get_turf(src))
-		intellicard.update_icon()
+		intellicard.update_appearance(UPDATE_ICON)
 		intellicard = null
 	stop_download(TRUE)
 
@@ -233,7 +242,7 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 	intellicard.AI.control_disabled = FALSE
 	intellicard.AI.relocate(TRUE)
 	intellicard.AI = null
-	intellicard.update_icon()
+	intellicard.update_appearance(UPDATE_ICON)
 
 /obj/machinery/computer/ai_control_console/ui_act(action, params)
 	if(..())
@@ -242,13 +251,13 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 	if(!cleared_for_use)
 		if(action == "clear_for_use")
 			var/code = params["control_code"]
-			
+
 			if(!code)
 				return
-			
+
 			if(!GLOB.ai_control_code)
 				return
-			
+
 			var/length_of_number = length(code)
 			if(length_of_number < 6)
 				to_chat(usr, span_warning("Incorrect code. Too short"))
@@ -289,13 +298,13 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 				authenticated = TRUE
 		if(action == "log_in_control_code")
 			var/code = params["control_code"]
-			
+
 			if(!code)
 				return
-			
+
 			if(!GLOB.ai_control_code)
 				return
-			
+
 			var/length_of_number = length(code)
 			if(length_of_number < 6)
 				to_chat(usr, span_warning("Incorrect code. Too short"))
@@ -340,7 +349,10 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 
 		if("stop_download")
 			if(isAI(usr))
-				to_chat(span_warning("You need physical access to stop the download!"))
+				to_chat(usr, span_warning("You need physical access to stop the download!"))
+				return
+			if(!is_station_level(z))
+				to_chat(usr, span_warning("No connection. Try again later."))
 				return
 			stop_download()
 
@@ -353,6 +365,9 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 			if(!istype(target.loc, /obj/machinery/ai/data_core))
 				return
 			if(!target.can_download)
+				return
+			if(!is_station_level(z))
+				to_chat(usr, span_warning("No connection. Try again later."))
 				return
 			downloading = target
 			to_chat(downloading, span_userdanger("Warning! Someone is attempting to download you from [get_area(src)]! (<a href='?src=[REF(downloading)];instant_download=1;console=[REF(src)]'>Click here to finish download instantly</a>)"))
@@ -368,6 +383,9 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 		if("start_hijack")
 			var/mob/user = usr
 			if(!is_infiltrator(usr))
+				return
+			if(!is_station_level(z))
+				to_chat(user, span_warning("No connection. Try again later."))
 				return
 			if(!istype(user.get_active_held_item(), /obj/item/ai_hijack_device))
 				to_chat(user, span_warning("You need to be holding the serial exploitation unit to initiate the hijacking process!"))
@@ -387,7 +405,7 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 				to_chat(user, span_warning("[A] is already in the process of being hijacked!"))
 				return
 			user.visible_message(span_warning("[user] begins furiously typing something into [src]..."))
-			if(do_after(user, 55, target = src))
+			if(do_after(user, 5.5 SECONDS, src))
 				user.dropItemToGround(device)
 				device.forceMove(A)
 				A.hijacking = device
@@ -408,9 +426,13 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 				return
 			var/mob/living/silicon/ai/A = target
 			var/mob/user = usr
-			
+
+			if(!is_station_level(z))
+				to_chat(user, span_warning("No connection. Try again later."))
+				return
+
 			user.visible_message(span_danger("[user] attempts to cancel a process on [src]."), span_notice("An unknown process seems to be interacting with [A]! You attempt to end the proccess.."))
-			if (do_after(user,100,target = src))
+			if (do_after(user, 10 SECONDS, src))
 				A.hijacking.forceMove(get_turf(src))
 				A.hijacking = null
 				A.hijack_start = 0
@@ -418,7 +440,63 @@ GLOBAL_VAR_INIT(ai_control_code, random_nukecode(6))
 				to_chat(A, span_bolddanger("Unknown device disconnected. Systems confirmed secure."))
 			else
 				to_chat(user, span_notice("You fail to remove the device."))
-		
+		if("start_cog")
+			var/mob/user = usr
+			if(!is_servant_of_ratvar(usr))
+				return
+			if(!is_station_level(z))
+				to_chat(user, span_brass("It's beyond our reach."))
+				return
+			if(!istype(user.get_active_held_item(), /obj/item/clockwork/integration_cog))
+				to_chat(user, span_brass("How are you going to integrate it with no integration cog?"))
+				return
+			var/obj/item/clockwork/integration_cog/device = user.get_active_held_item()
+			var/mob/living/silicon/ai/target = locate(params["target_ai"])
+			if(!target || !isAI(target))
+				return
+			var/mob/living/silicon/ai/A = target
+			if(A.mind && is_servant_of_ratvar(A))
+				to_chat(user, span_brass("[A] has already seen the light of the Justicar!"))
+				return
+			if(A.stat == DEAD)
+				to_chat(user, span_warning("[A] is dead!"))
+				return
+			if(A.cogging)
+				to_chat(user, span_brass("Be patient."))
+				return
+			user.visible_message(span_warning("[user] begins holds a strange cog up to [src], and it begins to spin..."))
+			if(do_after(user, 5.5 SECONDS, src))
+				user.dropItemToGround(device)
+				device.forceMove(A)
+				A.cogging = device
+				A.cog_start = world.time
+				A.update_icons()
+				to_chat(A, span_danger("Warning! Anomaly detected in primary systems!"))
+				to_chat(A, span_heavy_brass(text2ratvar("You belong to me now.")))
+				message_admins("[ADMIN_LOOKUPFLW(user)] has attached an integration cog to [ADMIN_LOOKUPFLW(A)]!")
+				notify_ghosts("[user] has begun to convert [A]!", source = src, action = NOTIFY_ORBIT, ghost_sound = 'sound/machines/chime.ogg')
+
+		if("stop_cog")
+			var/mob/living/silicon/ai/target = locate(params["target_ai"])
+			if(!target || !isAI(target))
+				return
+			var/mob/living/silicon/ai/A = target
+			var/mob/user = usr
+
+			if(!is_station_level(z))
+				to_chat(user, span_brass("It's beyond our reach."))
+				return
+
+			user.visible_message(span_danger("[user] begins to rip out a strange cog from [src]!"), span_notice("There's something attached to [A]! You attempt to remove it.."))
+			if (do_after(user, 10 SECONDS, src))
+				A.cogging.forceMove(get_turf(src))
+				A.cogging = null
+				A.cog_start = 0
+				A.update_icons()
+				to_chat(A, span_bolddanger("Anomaly cleared. System is now safe to resume operation."))
+			else
+				to_chat(user, span_notice("You fail to remove the cog."))
+
 
 
 /obj/item/paper/ai_control_code/Initialize(mapload)

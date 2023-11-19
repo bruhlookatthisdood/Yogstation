@@ -34,12 +34,6 @@
 /obj/structure/disposalpipe/segment,
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
-"aj" = (
-/obj/structure/sink/kitchen{
-	pixel_y = 28
-	},
-/turf/open/floor/wood,
-/area/crew_quarters/bar)
 "ak" = (
 /obj/machinery/door/window/southleft{
 	base_state = "left";
@@ -124,12 +118,6 @@
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
 "ax" = (
-/turf/open/floor/wood,
-/area/crew_quarters/bar)
-"ay" = (
-/obj/machinery/camera{
-	c_tag = "Bar Storage"
-	},
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
 "aA" = (
@@ -324,7 +312,7 @@
 	},
 /area/crew_quarters/kitchen)
 "bb" = (
-/obj/item/twohanded/required/kirbyplants{
+/obj/item/kirbyplants{
 	icon_state = "plant-03"
 	},
 /turf/open/floor/plasteel/vaporwave,
@@ -525,15 +513,6 @@
 /turf/open/floor/plasteel{
 	icon_state = "showroomfloor"
 	},
-/area/crew_quarters/kitchen)
-"bE" = (
-/obj/structure/table,
-/obj/machinery/microwave{
-	pixel_x = -3;
-	pixel_y = 6
-	},
-/obj/item/storage/box/donkpockets,
-/turf/open/floor/plasteel/vaporwave,
 /area/crew_quarters/kitchen)
 "bF" = (
 /obj/structure/window/reinforced{
@@ -947,7 +926,7 @@
 /turf/open/floor/plasteel/vaporwave,
 /area/crew_quarters/bar)
 "gz" = (
-/obj/item/twohanded/required/kirbyplants{
+/obj/item/kirbyplants{
 	icon_state = "plant-26"
 	},
 /turf/open/floor/plasteel/vaporwave,
@@ -1125,15 +1104,6 @@
 	},
 /turf/open/floor/plasteel/vaporwave,
 /area/crew_quarters/bar)
-"tZ" = (
-/obj/structure/table,
-/obj/item/reagent_containers/food/snacks/mint,
-/obj/item/storage/box/donkpockets{
-	pixel_x = 3;
-	pixel_y = 3
-	},
-/turf/open/floor/plasteel/vaporwave,
-/area/crew_quarters/kitchen)
 "up" = (
 /obj/structure/table,
 /obj/machinery/requests_console{
@@ -1176,7 +1146,7 @@
 	id = "kitchen";
 	name = "kitchen shutters"
 	},
-/obj/item/storage/box/fancy/donut_box,
+/obj/item/storage/fancy/donut_box,
 /obj/machinery/door/firedoor/border_only{
 	dir = 1
 	},
@@ -1228,6 +1198,23 @@
 	dir = 9
 	},
 /turf/open/floor/plasteel/vaporwave,
+/area/crew_quarters/bar)
+"Ir" = (
+/obj/structure/table,
+/obj/machinery/microwave{
+	pixel_x = -3;
+	pixel_y = 6
+	},
+/turf/open/floor/plasteel/vaporwave,
+/area/crew_quarters/kitchen)
+"KJ" = (
+/obj/machinery/camera{
+	c_tag = "Bar Storage"
+	},
+/obj/structure/sink/kitchen{
+	pixel_y = 28
+	},
+/turf/open/floor/wood,
 /area/crew_quarters/bar)
 "KY" = (
 /obj/machinery/atmospherics/components/unary/vent_scrubber/on/layer4{
@@ -1288,10 +1275,29 @@
 /obj/item/stack/packageWrap,
 /turf/open/floor/plasteel/vaporwave,
 /area/crew_quarters/kitchen)
+"Sy" = (
+/obj/structure/table,
+/obj/item/reagent_containers/food/snacks/mint,
+/obj/effect/spawner/lootdrop/donkpockets{
+	pixel_x = -8;
+	pixel_y = -7
+	},
+/obj/effect/spawner/lootdrop/donkpockets{
+	pixel_x = -9;
+	pixel_y = 5
+	},
+/turf/open/floor/plasteel/vaporwave,
+/area/crew_quarters/kitchen)
 "SA" = (
 /obj/effect/landmark/blobstart,
 /obj/item/clothing/mask/cigarette/rollie/cannabis,
 /turf/open/floor/plating,
+/area/crew_quarters/bar)
+"Uo" = (
+/obj/machinery/chem_master/condimaster{
+	name = "HoochMaster 2000"
+	},
+/turf/open/floor/wood,
 /area/crew_quarters/bar)
 "Yu" = (
 /obj/item/reagent_containers/food/drinks/shaker,
@@ -1532,7 +1538,7 @@ cE
 ab
 "}
 (15,1,1) = {"
-aj
+Uo
 ax
 aL
 cD
@@ -1549,7 +1555,7 @@ ab
 "}
 (16,1,1) = {"
 ab
-ay
+KJ
 aD
 ab
 ab
@@ -1604,7 +1610,7 @@ bn
 al
 bl
 bO
-tZ
+Sy
 Ha
 bN
 bN
@@ -1666,7 +1672,7 @@ al
 aQ
 bq
 al
-bE
+Ir
 bS
 cc
 cc

@@ -6,7 +6,7 @@
 	density = TRUE
 	anchored = TRUE
 	resistance_flags = ACID_PROOF
-	armor = list("melee" = 30, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 10, "bio" = 0, "rad" = 0, "fire" = 70, "acid" = 100)
+	armor = list(MELEE = 30, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 10, BIO = 0, RAD = 0, FIRE = 70, ACID = 100)
 	max_integrity = 200
 	integrity_failure = 0.25
 	var/obj/item/showpiece = null
@@ -20,7 +20,7 @@
 	var/trophy_message = ""
 	var/glass_fix = TRUE
 
-/obj/structure/displaycase/Initialize()
+/obj/structure/displaycase/Initialize(mapload)
 	. = ..()
 	if(start_showpieces.len && !start_showpiece_type)
 		var/list/showpiece_entry = pick(start_showpieces)
@@ -30,7 +30,7 @@
 				trophy_message = showpiece_entry["trophy_message"]
 	if(start_showpiece_type)
 		showpiece = new start_showpiece_type (src)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/structure/displaycase/Destroy()
 	if(electronics)
@@ -75,7 +75,7 @@
 		broken = 1
 		new /obj/item/shard( src.loc )
 		playsound(src, "shatter", 70, TRUE)
-		update_icon()
+		update_appearance(UPDATE_ICON)
 		trigger_alarm()
 
 /obj/structure/displaycase/proc/trigger_alarm()
@@ -85,7 +85,8 @@
 		alarmed.burglaralert(src)
 		playsound(src, 'sound/effects/alert.ogg', 50, TRUE)
 
-/obj/structure/displaycase/update_icon()
+/obj/structure/displaycase/update_icon(updates=ALL)
+	. = ..()
 	var/icon/I
 	if(open)
 		I = icon('icons/obj/stationobjs.dmi',"glassbox_open")
@@ -97,8 +98,7 @@
 		var/icon/S = getFlatIcon(showpiece)
 		S.Scale(17,17)
 		I.Blend(S,ICON_UNDERLAY,8,8)
-	src.icon = I
-	return
+	icon = I
 
 /obj/structure/displaycase/attackby(obj/item/W, mob/user, params)
 	if(W.GetID() && !broken && openable)
@@ -115,7 +115,7 @@
 			to_chat(user, span_notice("You begin repairing [src]..."))
 			if(W.use_tool(src, user, 40, amount=5, volume=50))
 				obj_integrity = max_integrity
-				update_icon()
+				update_appearance(UPDATE_ICON)
 				to_chat(user, span_notice("You repair [src]."))
 		else
 			to_chat(user, span_warning("[src] is already in good condition!"))
@@ -139,24 +139,24 @@
 		if(user.transferItemToLoc(W, src))
 			showpiece = W
 			to_chat(user, span_notice("You put [W] on display."))
-			update_icon()
+			update_appearance(UPDATE_ICON)
 	else if(glass_fix && broken && istype(W, /obj/item/stack/sheet/glass))
 		var/obj/item/stack/sheet/glass/G = W
 		if(G.get_amount() < 2)
 			to_chat(user, span_warning("You need two glass sheets to fix the case!"))
 			return
 		to_chat(user, span_notice("You start fixing [src]..."))
-		if(do_after(user, 2 SECONDS, target = src))
+		if(do_after(user, 2 SECONDS, src))
 			G.use(2)
 			broken = 0
 			obj_integrity = max_integrity
-			update_icon()
+			update_appearance(UPDATE_ICON)
 	else
 		return ..()
 
 /obj/structure/displaycase/proc/toggle_lock(mob/user)
 	open = !open
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/structure/displaycase/attack_paw(mob/user)
 	return attack_hand(user)
@@ -171,7 +171,7 @@
 		log_combat(user, src, "deactivates the hover field of")
 		dump()
 		src.add_fingerprint(user)
-		update_icon()
+		update_appearance(UPDATE_ICON)
 		return
 	else
 	    //prevents remote "kicks" with TK
@@ -207,7 +207,7 @@
 	else if(istype(I, /obj/item/electronics/airlock))
 		to_chat(user, span_notice("You start installing the electronics into [src]..."))
 		I.play_tool_sound(src)
-		if(do_after(user, 3 SECONDS, target = src) && user.transferItemToLoc(I,src))
+		if(do_after(user, 3 SECONDS, src) && user.transferItemToLoc(I,src))
 			electronics = I
 			to_chat(user, span_notice("You install the airlock electronics."))
 	else if(istype(I, /obj/item/stack/sheet/glass))
@@ -216,7 +216,7 @@
 			to_chat(user, span_warning("You need ten glass sheets to do this!"))
 			return
 		to_chat(user, span_notice("You start adding [G] to [src]..."))
-		if(do_after(user, 2 SECONDS, target = src))
+		if(do_after(user, 2 SECONDS, src))
 			G.use(10)
 			var/obj/structure/displaycase/noalert/display = new(src.loc)
 			if(electronics)
@@ -257,7 +257,7 @@
 	integrity_failure = 0
 	openable = FALSE
 
-/obj/structure/displaycase/trophy/Initialize()
+/obj/structure/displaycase/trophy/Initialize(mapload)
 	. = ..()
 	GLOB.trophy_cases += src
 
@@ -292,7 +292,7 @@
 		to_chat(user, span_warning("The case rejects the [W]!"))
 		return
 
-	for(var/a in W.GetAllContents())
+	for(var/a in W.get_all_contents())
 		if(is_type_in_typecache(a, GLOB.blacklisted_cargo_types))
 			to_chat(user, span_warning("The case rejects the [W]!"))
 			return
@@ -306,7 +306,7 @@
 		to_chat(user, span_notice("You insert [W] into the case."))
 		showpiece = W
 		added_roundstart = FALSE
-		update_icon()
+		update_appearance(UPDATE_ICON)
 
 		placer_key = user.ckey
 

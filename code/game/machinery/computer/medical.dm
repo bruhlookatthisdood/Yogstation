@@ -503,7 +503,7 @@
 					src.printing = 1
 					GLOB.data_core.medicalPrintCount++
 					playsound(loc, 'sound/items/poster_being_created.ogg', 100, 1)
-					sleep(30)
+					sleep(3 SECONDS)
 					var/obj/item/paper/P = new /obj/item/paper( src.loc )
 					P.info = "<CENTER><B>Medical Record - (MR-[GLOB.data_core.medicalPrintCount])</B></CENTER><BR>"
 					if(active1 in GLOB.data_core.general)
@@ -523,7 +523,7 @@
 						P.info += "<B>Medical Record Lost!</B><BR>"
 						P.name = text("MR-[] '[]'", GLOB.data_core.medicalPrintCount, "Record Lost")
 					P.info += "</TT>"
-					P.update_icon()
+					P.update_appearance(UPDATE_ICON)
 					src.printing = null
 
 	src.add_fingerprint(usr)

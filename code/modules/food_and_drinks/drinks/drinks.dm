@@ -5,7 +5,7 @@
 	name = "drink"
 	desc = "yummy"
 	icon = 'icons/obj/drinks.dmi'
-	icon_state = null
+	icon_state = "pineapplejuice" // Shouldn't see this anyways.
 	lefthand_file = 'icons/mob/inhands/misc/food_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/misc/food_righthand.dmi'
 	reagent_flags = OPENCONTAINER
@@ -28,26 +28,30 @@
 		to_chat(user, span_warning("[src] is empty!"))
 		return 0
 
-	if(!canconsume(M, user))
-		return 0
+	if(iscarbon(M))
+		var/mob/living/carbon/C = M
+		if(!canconsume(M, user))
+			return 0
 
-	if (!is_drainable())
-		to_chat(user, span_warning("[src]'s lid hasn't been opened!"))
-		return 0
+		if (!is_drainable())
+			to_chat(user, span_warning("[src]'s lid hasn't been opened!"))
+			return 0
 
-	if(M == user)
-		user.visible_message(span_notice("[user] swallows a gulp of [src]."), span_notice("You swallow a gulp of [src]."))
-		if(HAS_TRAIT(M, TRAIT_VORACIOUS))
-			M.changeNext_move(CLICK_CD_MELEE * 0.5) //chug! chug! chug!
+		if(M == user)
+			if(HAS_TRAIT(M, TRAIT_VORACIOUS))
+				M.changeNext_move(CLICK_CD_MELEE * 0.5) //chug! chug! chug!
 
-	else
-		M.visible_message(span_danger("[user] attempts to feed the contents of [src] to [M]."), span_userdanger("[user] attempts to feed the contents of [src] to [M]."))
-		if(!do_mob(user, M))
+		else
+			if(!C.force_drink_text(src, C, user))
+				return
+			if(!do_after(user, 3 SECONDS, M))
+				return
+			if(!reagents || !reagents.total_volume)
+				return // The drink might be empty after the delay, such as by spam-feeding
+			log_combat(user, M, "fed", reagents.log_list())
+
+		if(!C.drink_text(src, C, user))
 			return
-		if(!reagents || !reagents.total_volume)
-			return // The drink might be empty after the delay, such as by spam-feeding
-		M.visible_message(span_danger("[user] feeds the contents of [src] to [M]."), span_userdanger("[user] feeds the contents of [src] to [M]."))
-		log_combat(user, M, "fed", reagents.log_list())
 
 	var/fraction = min(gulp_size/reagents.total_volume, 1)
 	checkLiked(fraction, M)
@@ -77,7 +81,7 @@
 		if(iscyborg(user)) //Cyborg modules that include drinks automatically refill themselves, but drain the borg's cell
 			var/mob/living/silicon/robot/bro = user
 			bro.cell.use(30)
-			addtimer(CALLBACK(reagents, /datum/reagents.proc/add_reagent, refill, trans), 600)
+			addtimer(CALLBACK(reagents, TYPE_PROC_REF(/datum/reagents, add_reagent), refill, trans), 600)
 
 	else if(target.is_drainable()) //A dispenser. Transfer FROM it TO us.
 		if (!is_refillable())
@@ -155,7 +159,6 @@
 	possible_transfer_amounts = list()
 	volume = 5
 	flags_1 = CONDUCT_1
-	spillable = TRUE
 	resistance_flags = FIRE_PROOF
 	isGlass = FALSE
 
@@ -203,7 +206,6 @@
 	desc = "Careful, the beverage you're about to enjoy is extremely hot."
 	icon_state = "coffee"
 	list_reagents = list(/datum/reagent/consumable/coffee = 30)
-	spillable = TRUE
 	resistance_flags = FREEZE_PROOF
 	isGlass = FALSE
 	foodtype = BREAKFAST
@@ -214,7 +216,6 @@
 	custom_price = 5
 	icon_state = "coffee"
 	list_reagents = list(/datum/reagent/consumable/ice = 30)
-	spillable = TRUE
 	isGlass = FALSE
 
 /obj/item/reagent_containers/food/drinks/ice/prison
@@ -227,7 +228,6 @@
 	desc = "A drink served in a classy mug."
 	icon_state = "tea"
 	item_state = "coffee"
-	spillable = TRUE
 
 /obj/item/reagent_containers/food/drinks/mug/on_reagent_change(changetype)
 	if(reagents.total_volume)
@@ -252,7 +252,10 @@
 /obj/item/reagent_containers/food/drinks/dry_ramen
 	name = "cup ramen"
 	desc = "Just add 5ml of water, self heats! A taste that reminds you of your school years. Now new with salty flavour!"
+	lefthand_file = 'yogstation/icons/mob/inhands/lefthand.dmi'
+	righthand_file = 'yogstation/icons/mob/inhands/righthand.dmi'
 	icon_state = "ramen"
+	item_state = "ramen"
 	list_reagents = list(/datum/reagent/consumable/dry_ramen = 15, /datum/reagent/consumable/sodiumchloride = 3)
 	foodtype = GRAIN
 	isGlass = FALSE
@@ -270,6 +273,10 @@
 	desc = "Brewed with \"Pure Ice Asteroid Spring Water\"."
 	list_reagents = list(/datum/reagent/consumable/ethanol/beer/light = 30)
 
+/obj/item/reagent_containers/food/drinks/beer/light/plastic
+	list_reagents = list(/datum/reagent/consumable/ethanol/beer/light = 15)
+	isGlass = FALSE
+
 /obj/item/reagent_containers/food/drinks/ale
 	name = "Magm-Ale"
 	desc = "A true dorf's drink of choice."
@@ -284,7 +291,6 @@
 	icon_state = "water_cup_e"
 	possible_transfer_amounts = list()
 	volume = 10
-	spillable = TRUE
 	isGlass = FALSE
 
 /obj/item/reagent_containers/food/drinks/sillycup/on_reagent_change(changetype)
@@ -297,6 +303,7 @@
 	name = "small carton"
 	desc = "A small carton, intended for holding drinks."
 	icon_state = "juicebox"
+	icon_state_preview = "juicebox"
 	volume = 15 //I figure if you have to craft these it should at least be slightly better than something you can get for free from a watercooler
 
 /obj/item/reagent_containers/food/drinks/sillycup/smallcarton/smash(atom/target, mob/thrower, ranged = FALSE)
@@ -407,17 +414,16 @@
 	desc = "A cup with the british flag emblazoned on it."
 	icon_state = "britcup"
 	volume = 30
-	spillable = TRUE
 
 //////////////////////////soda_cans//
 //These are in their own group to be used as IED's in /obj/item/grenade/ghettobomb.dm
 
 /obj/item/reagent_containers/food/drinks/soda_cans
 	name = "soda can"
+	icon_state_preview = "cola"
 	lefthand_file = 'icons/mob/inhands/misc/food_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/misc/food_righthand.dmi'
 	reagent_flags = NONE
-	spillable = FALSE
 	isGlass = FALSE
 
 /obj/item/reagent_containers/food/drinks/soda_cans/suicide_act(mob/living/carbon/human/H)
@@ -426,19 +432,19 @@
 		return SHAME
 	if(!is_drainable())
 		open_soda()
-		sleep(10)
+		sleep(1 SECONDS)
 	H.visible_message(span_suicide("[H] takes a big sip from [src]! It looks like [H.p_theyre()] trying to commit suicide!"))
 	playsound(H,'sound/items/drink.ogg', 80, 1)
 	reagents.trans_to(H, src.reagents.total_volume, transfered_by = H) //a big sip
-	sleep(5)
+	sleep(0.5 SECONDS)
 	H.say(pick("Now, Outbomb Cuban Pete, THAT was a game.", "All these new fangled arcade games are too slow. I prefer the classics.", "They don't make 'em like Orion Trail anymore.", "You know what they say. Worst day of spess carp fishing is better than the best day at work.", "They don't make 'em like good old fashioned singularity engines anymore."))
 	if(H.age >= 30)
-		H.Stun(50)
-		sleep(50)
+		H.Stun(5 SECONDS)
+		sleep(5 SECONDS)
 		playsound(H,'sound/items/drink.ogg', 80, 1)
 		H.say(pick("Another day, another dollar.", "I wonder if I should hold?", "Diversifying is for young'ns.", "Yeap, times were good back then."))
 		return MANUAL_SUICIDE_NONLETHAL
-	sleep(20) //dramatic pause
+	sleep(2 SECONDS) //dramatic pause
 	return TOXLOSS
 
 /obj/item/reagent_containers/food/drinks/soda_cans/attack(mob/M, mob/user)
@@ -454,7 +460,6 @@
 	to_chat(user, "You pull back the tab of \the [src] with a satisfying pop.") //Ahhhhhhhh
 	ENABLE_BITFIELD(reagents.flags, OPENCONTAINER)
 	playsound(src, "can_open", 50, 1)
-	spillable = TRUE
 
 /obj/item/reagent_containers/food/drinks/soda_cans/attack_self(mob/user)
 	if(!is_drainable())
@@ -468,6 +473,18 @@
 	icon_state = "cola"
 	list_reagents = list(/datum/reagent/consumable/space_cola = 30)
 	foodtype = SUGAR
+
+/obj/item/reagent_containers/food/drinks/soda_cans/rootbeer
+	name = "Root Beer"
+	desc = "A soft drink made from roots. Non-Alcoholic."
+	custom_price = 10
+	icon_state = "Rootbeer_Mug"
+	list_reagents = list(/datum/reagent/consumable/rootbeer = 30)
+	foodtype = SUGAR
+
+/obj/item/reagent_containers/food/drinks/soda_cans/rootbeer/Initialize(mapload)
+	icon_state = pick("Rootbeer_Mug","Rootbeer_AW","Rootbeer_Barq")
+	. = ..()
 
 /obj/item/reagent_containers/food/drinks/soda_cans/tonic
 	name = "T-Borg's tonic water"
@@ -491,7 +508,7 @@
 	list_reagents = list(/datum/reagent/consumable/lemon_lime = 30)
 	foodtype = FRUIT
 
-/obj/item/reagent_containers/food/drinks/soda_cans/lemon_lime/Initialize()
+/obj/item/reagent_containers/food/drinks/soda_cans/lemon_lime/Initialize(mapload)
 	. = ..()
 	name = "lemon-lime soda"
 
@@ -590,7 +607,7 @@
 	var/static/list/descs = list("The entire label seems to just be a legal disclaimer.","The label reads off over 200 possible flavors."\
 	, "The date on the cap reads off that the bottle expired a decade ago...")
 
-/obj/item/reagent_containers/food/drinks/soda_cans/mystery/Initialize()
+/obj/item/reagent_containers/food/drinks/soda_cans/mystery/Initialize(mapload)
 	list_reagents = list(get_random_reagent_id() = 30)
 	. = ..()
 	if(prob(20))
@@ -613,7 +630,7 @@
 	var/random_sprite = TRUE
 
 
-/obj/item/reagent_containers/food/drinks/colocup/Initialize()
+/obj/item/reagent_containers/food/drinks/colocup/Initialize(mapload)
 	.=..()
 	pixel_x = rand(-4,4)
 	pixel_y = rand(-4,4)

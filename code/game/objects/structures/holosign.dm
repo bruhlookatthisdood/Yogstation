@@ -6,8 +6,9 @@
 	icon = 'icons/effects/effects.dmi'
 	anchored = TRUE
 	max_integrity = 1
-	armor = list("melee" = 0, "bullet" = 50, "laser" = 50, "energy" = 50, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 20, "acid" = 20)
+	armor = list(MELEE = 0, BULLET = 50, LASER = 50, ENERGY = 50, BOMB = 0, BIO = 0, RAD = 0, FIRE = 20, ACID = 20)
 	var/obj/item/holosign_creator/projector
+	resistance_flags = FREEZE_PROOF
 
 /obj/structure/holosign/New(loc, source_projector)
 	if(source_projector)
@@ -15,7 +16,7 @@
 		projector.signs += src
 	..()
 
-/obj/structure/holosign/Initialize()
+/obj/structure/holosign/Initialize(mapload)
 	. = ..()
 	alpha = 0
 	SSvis_overlays.add_vis_overlay(src, icon, icon_state, ABOVE_MOB_LAYER, plane, dir, add_appearance_flags = RESET_ALPHA) //you see mobs under it, but you hit them like they are above it
@@ -32,7 +33,7 @@
 		return
 	user.do_attack_animation(src, ATTACK_EFFECT_PUNCH)
 	user.changeNext_move(CLICK_CD_MELEE)
-	take_damage(5 , BRUTE, "melee", 1)
+	take_damage(5 , BRUTE, MELEE, 1)
 
 /obj/structure/holosign/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
 	switch(damage_type)
@@ -46,6 +47,16 @@
 	desc = "The words flicker as if they mean nothing."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "holosign"
+
+/obj/structure/holosign/holobanana
+	name = "Holographic banana peel"
+	desc = "A peel from a projector"
+	icon = 'icons/effects/effects.dmi'
+	icon_state = "holosign_banana"
+
+/obj/structure/holosign/holobanana/Initialize(mapload)
+	. = ..()
+	AddComponent(/datum/component/slippery, 120, GALOSHES_DONT_HELP)
 
 /obj/structure/holosign/barrier
 	name = "holobarrier"
@@ -74,6 +85,18 @@
 	desc = "When it says walk it means walk."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "holosign"
+	var/turf/slippery_floor
+
+/obj/structure/holosign/barrier/wetsign/Initialize(mapload)
+	. = ..()
+	slippery_floor = get_turf(src)
+	if(!slippery_floor?.GetComponent(/datum/component/slippery))
+		return INITIALIZE_HINT_QDEL
+	RegisterSignal(slippery_floor.GetComponent(/datum/component/slippery), COMSIG_PARENT_QDELETING, PROC_REF(del_self))
+
+/obj/structure/holosign/barrier/wetsign/proc/del_self()
+	SIGNAL_HANDLER
+	qdel(src)
 
 /obj/structure/holosign/barrier/wetsign/CanAllowThrough(atom/movable/mover, turf/target)
 	. = ..()
@@ -100,11 +123,12 @@
 	density = FALSE
 	anchored = TRUE
 	CanAtmosPass = ATMOS_PASS_NO
+	resistance_flags = FIRE_PROOF | FREEZE_PROOF
 	alpha = 150
 	flags_1 = RAD_PROTECT_CONTENTS_1 | RAD_NO_CONTAMINATE_1
 	rad_insulation = RAD_LIGHT_INSULATION
 
-/obj/structure/holosign/barrier/atmos/Initialize()
+/obj/structure/holosign/barrier/atmos/Initialize(mapload)
 	. = ..()
 	air_update_turf(TRUE)
 
@@ -115,12 +139,12 @@
 	max_integrity = 10
 	allow_walk = 0
 
-/obj/structure/holosign/barrier/cyborg/bullet_act(obj/item/projectile/P)
-	take_damage((P.damage / 5) , BRUTE, "melee", 1)	//Doesn't really matter what damage flag it is.
-	if(istype(P, /obj/item/projectile/energy/electrode))
-		take_damage(10, BRUTE, "melee", 1)	//Tasers aren't harmful.
-	if(istype(P, /obj/item/projectile/beam/disabler))
-		take_damage(5, BRUTE, "melee", 1)	//Disablers aren't harmful.
+/obj/structure/holosign/barrier/cyborg/bullet_act(obj/projectile/P)
+	take_damage((P.damage / 5) , BRUTE, MELEE, 1)	//Doesn't really matter what damage flag it is.
+	if(istype(P, /obj/projectile/energy/electrode))
+		take_damage(10, BRUTE, MELEE, 1)	//Tasers aren't harmful.
+	if(istype(P, /obj/projectile/beam/disabler))
+		take_damage(5, BRUTE, MELEE, 1)	//Disablers aren't harmful.
 	return BULLET_ACT_HIT
 
 /obj/structure/holosign/barrier/medical
@@ -164,14 +188,86 @@
 	else
 		return ..()
 
+/obj/structure/holobed
+	name = "holobed"
+	desc = "A first aid holobeds that slow down the metabolism of those laying on it and provides a sterile environment for surgery."
+	icon = 'icons/obj/surgery.dmi'
+	icon_state = "opmat_holo"
+	anchored = TRUE
+	can_buckle = TRUE
+	density = FALSE
+	buckle_lying = 90
+	max_integrity = 1
+	layer = BELOW_OBJ_LAYER
+	var/obj/item/holosign_creator/projector
+	var/atom/movable/occupant = null
+	var/stasis = TRUE
+
+/obj/structure/holobed/New(loc, source_projector)
+	if(source_projector)
+		projector = source_projector
+		projector.signs += src
+	..()
+
+/obj/structure/holobed/Destroy()
+	if(projector)
+		projector.signs -= src
+		projector = null
+	return ..()
+
+/obj/structure/holobed/Initialize(mapload)
+	. = ..()
+	AddComponent(/datum/component/surgery_bed, \
+		success_chance = 0.95, \
+	)
+
+/obj/structure/holobed/examine(mob/user)
+	. = ..()
+	. += span_notice("The lifeform stasis field is <b>[stasis ? "on" : "off"]</b>.")
+
+/obj/structure/holosign/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
+	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
+
+/obj/structure/holobed/update_icon_state()
+	. = ..()
+	icon_state = "[initial(icon_state)][stasis ? "" : "_off"]"
+
+/obj/structure/holobed/AltClick(mob/living/user)
+	if(user.a_intent == INTENT_HELP)
+		stasis = !stasis
+		handle_stasis(occupant)
+		update_appearance(UPDATE_ICON)
+		to_chat(user, span_warning("You [stasis ? "activate" : "deactivate"] the stasis field."))
+
+/obj/structure/holobed/Exited(atom/movable/AM, atom/newloc)
+	handle_stasis(AM)
+	. = ..()
+
+/obj/structure/holobed/proc/handle_stasis(mob/living/target)
+	if(target == occupant && stasis)
+		if(!target.has_status_effect(STATUS_EFFECT_STASIS))
+			target.apply_status_effect(STATUS_EFFECT_STASIS, null, TRUE, 1)
+	else
+		if(istype(target) && target.has_status_effect(STATUS_EFFECT_STASIS))
+			target.remove_status_effect(STATUS_EFFECT_STASIS)
+
+/obj/structure/holobed/post_buckle_mob(mob/living/L)
+	occupant = L
+	handle_stasis(L)
+
+/obj/structure/holobed/post_unbuckle_mob(mob/living/L)
+	if(L == occupant)
+		occupant = null
+	handle_stasis(L)
+
 /obj/structure/holosign/barrier/cyborg/hacked
 	name = "Charged Energy Field"
 	desc = "A powerful energy field that blocks movement. Energy arcs off it."
 	max_integrity = 20
 	var/shockcd = 0
 
-/obj/structure/holosign/barrier/cyborg/hacked/bullet_act(obj/item/projectile/P)
-	take_damage(P.damage, BRUTE, "melee", 1)	//Yeah no this doesn't get projectile resistance.
+/obj/structure/holosign/barrier/cyborg/hacked/bullet_act(obj/projectile/P)
+	take_damage(P.damage, BRUTE, MELEE, 1)	//Yeah no this doesn't get projectile resistance.
 	return BULLET_ACT_HIT
 
 /obj/structure/holosign/barrier/cyborg/hacked/proc/cooldown()
@@ -186,7 +282,7 @@
 			var/mob/living/M = user
 			M.electrocute_act(15,"Energy Barrier", safety=1)
 			shockcd = TRUE
-			addtimer(CALLBACK(src, .proc/cooldown), 5)
+			addtimer(CALLBACK(src, PROC_REF(cooldown)), 5)
 
 /obj/structure/holosign/barrier/cyborg/hacked/Bumped(atom/movable/AM)
 	if(shockcd)
@@ -198,4 +294,4 @@
 	var/mob/living/M = AM
 	M.electrocute_act(15,"Energy Barrier", safety=1)
 	shockcd = TRUE
-	addtimer(CALLBACK(src, .proc/cooldown), 5)
+	addtimer(CALLBACK(src, PROC_REF(cooldown)), 5)

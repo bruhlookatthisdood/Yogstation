@@ -47,7 +47,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 	hud_possible = list(ANTAG_HUD)
 
 
-/mob/living/simple_animal/hostile/floor_cluwne/Initialize()
+/mob/living/simple_animal/hostile/floor_cluwne/Initialize(mapload)
 	. = ..()
 	access_card = new /obj/item/card/id(src)
 	access_card.access = get_all_accesses()//THERE IS NO ESCAPE
@@ -79,7 +79,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 	return TRUE
 
 
-/mob/living/simple_animal/hostile/floor_cluwne/Life()
+/mob/living/simple_animal/hostile/floor_cluwne/Life(seconds_per_tick = SSMOBS_DT, times_fired)
 	do_jitter_animation(1000)
 	pixel_y = 8
 	var/area/A = get_area(loc) // Has to be separated from the below since is_type_in_typecache is also a funky macro
@@ -151,7 +151,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 	return
 
 
-/mob/living/simple_animal/hostile/floor_cluwne/electrocute_act(shock_damage, obj/source, siemens_coeff = 1, safety = 0, tesla_shock = 0, illusion = 0, stun = TRUE)//prevents runtimes with machine fuckery
+/mob/living/simple_animal/hostile/floor_cluwne/electrocute_act(shock_damage, obj/source, siemens_coeff = 1, safety = 0, tesla_shock = 0, illusion = 0, stun = TRUE, gib = FALSE)//prevents runtimes with machine fuckery
 	return FALSE
 
 /mob/living/simple_animal/hostile/floor_cluwne/proc/Found_You()
@@ -211,7 +211,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 		mobility_flags &= ~MOBILITY_MOVE
 		update_mobility()
 		cluwnehole = new(src.loc)
-		addtimer(CALLBACK(src, /mob/living/simple_animal/hostile/floor_cluwne/.proc/Appear), MANIFEST_DELAY)
+		addtimer(CALLBACK(src, TYPE_PROC_REF(/mob/living/simple_animal/hostile/floor_cluwne, Appear)), MANIFEST_DELAY)
 	else
 		layer = GAME_PLANE
 		invisibility = INVISIBILITY_OBSERVER
@@ -230,7 +230,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 /mob/living/simple_animal/hostile/floor_cluwne/proc/Reset_View(screens, colour, mob/living/carbon/human/H)
 	if(screens)
 		for(var/whole_screen in screens)
-			animate(whole_screen, transform = matrix(), time = 5, easing = QUAD_EASING)
+			animate(whole_screen, transform = matrix(), time = 0.5 SECONDS, easing = QUAD_EASING)
 	if(colour && H)
 		H.client.color = colour
 
@@ -282,7 +282,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 				to_chat(H, "<i>yalp ot tnaw I</i>")
 				Appear()
 				manifested = FALSE
-				addtimer(CALLBACK(src, /mob/living/simple_animal/hostile/floor_cluwne/.proc/Manifest), 2)
+				addtimer(CALLBACK(src, TYPE_PROC_REF(/mob/living/simple_animal/hostile/floor_cluwne, Manifest)), 2)
 				current_victim.set_drugginess(rand(1,10))
 
 		if(STAGE_TORMENT)
@@ -335,7 +335,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 				H.reagents.add_reagent(/datum/reagent/mercury, 3)
 				Appear()
 				manifested = FALSE
-				addtimer(CALLBACK(src, /mob/living/simple_animal/hostile/floor_cluwne/.proc/Manifest), 2)
+				addtimer(CALLBACK(src, TYPE_PROC_REF(/mob/living/simple_animal/hostile/floor_cluwne, Manifest)), 2)
 				for(var/obj/machinery/light/L in range(H, 8))
 					L.flicker()
 
@@ -357,7 +357,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 				Manifest()
 				if(!eating)
 					empulse(src, 6, 6)
-					addtimer(CALLBACK(src, /mob/living/simple_animal/hostile/floor_cluwne/.proc/Grab, H), 50, TIMER_OVERRIDE|TIMER_UNIQUE)
+					addtimer(CALLBACK(src, TYPE_PROC_REF(/mob/living/simple_animal/hostile/floor_cluwne, Grab), H), 50, TIMER_OVERRIDE|TIMER_UNIQUE)
 					for(var/turf/open/O in range(src, 6))
 						O.MakeSlippery(TURF_WET_LUBE, 30)
 						playsound(src, 'sound/effects/meteorimpact.ogg', 30, 1)
@@ -367,7 +367,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 /mob/living/simple_animal/hostile/floor_cluwne/proc/Grab(mob/living/carbon/human/H)
 	to_chat(H, span_userdanger("You feel a cold, gloved hand clamp down on your ankle!"))
 	for(var/I in 1 to get_dist(src, H))
-		if(do_after(src, 0.5 SECONDS, target = H))
+		if(do_after(src, 0.5 SECONDS, H))
 			Found_You()
 			step_towards(H, src)
 			playsound(H, pick('yogstation/sound/effects/bodyscrape-01.ogg', 'yogstation/sound/effects/bodyscrape-02.ogg'), 20, 1, -4)
@@ -379,13 +379,13 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 
 	if(get_dist(src,H) <= 1)
 		visible_message(span_danger("[src] begins dragging [H] under the floor!"))
-		if(do_after(src, 5 SECONDS, target = H) && eating)
+		if(do_after(src, 5 SECONDS, H) && eating)
 			H.become_blind()
 			H.layer = GAME_PLANE
 			H.invisibility = INVISIBILITY_OBSERVER
 			H.density = FALSE
 			H.anchored = TRUE
-			addtimer(CALLBACK(src, /mob/living/simple_animal/hostile/floor_cluwne/.proc/Kill, H), 100, TIMER_OVERRIDE|TIMER_UNIQUE)
+			addtimer(CALLBACK(src, TYPE_PROC_REF(/mob/living/simple_animal/hostile/floor_cluwne, Kill), H), 100, TIMER_OVERRIDE|TIMER_UNIQUE)
 			visible_message(span_danger("[src] pulls [H] under!"))
 			to_chat(H, span_userdanger("[src] drags you underneath the floor!"))
 		else
@@ -405,10 +405,10 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 	var/red_splash = list(1,0,0,0.8,0.2,0, 0.8,0,0.2,0.1,0,0)
 	var/pure_red = list(0,0,0,0,0,0,0,0,0,1,0,0)
 	H.client.color = pure_red
-	animate(H.client,color = red_splash, time = 10, easing = SINE_EASING|EASE_OUT)
+	animate(H.client,color = red_splash, time = 1 SECONDS, easing = SINE_EASING|EASE_OUT)
 	for(var/turf/T in orange(H, 4))
 		H.add_splatter_floor(T)
-	if(do_after(src, 5 SECONDS, target = H))
+	if(do_after(src, 5 SECONDS, H))
 		H.unequip_everything()//more runtime prevention
 		if(prob(75))
 			H.gib(FALSE)
@@ -422,7 +422,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 			H.density = initial(H.density)
 			H.anchored = initial(H.anchored)
 			H.blur_eyes(10)
-			animate(H.client,color = old_color, time = 20)
+			animate(H.client,color = old_color, time = 2 SECONDS)
 
 	eating = FALSE
 	switch_stage = switch_stage * 0.75 //he gets faster after each feast
@@ -441,7 +441,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 	duration = 600
 	randomdir = FALSE
 
-/obj/effect/temp_visual/fcluwne_manifest/Initialize()
+/obj/effect/temp_visual/fcluwne_manifest/Initialize(mapload)
 	. = ..()
 	playsound(src, 'yogstation/sound/misc/floor_cluwne_emerge.ogg', 100, 1)
 	flick("fcluwne_manifest",src)
@@ -450,7 +450,7 @@ GLOBAL_VAR_INIT(floor_cluwnes, 0)
 	name = "floor cluwne"
 	desc = "If you have this, tell a coder or admin!"
 
-/obj/effect/dummy/floorcluwne_orbit/Initialize()
+/obj/effect/dummy/floorcluwne_orbit/Initialize(mapload)
 	. = ..()
 	GLOB.floor_cluwnes++
 	name += " ([GLOB.floor_cluwnes])"

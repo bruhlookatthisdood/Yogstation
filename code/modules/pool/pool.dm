@@ -22,6 +22,7 @@ Place a pool filter somewhere in the pool if you want people to be able to modif
 	icon = 'icons/obj/pool.dmi'
 	icon_state = "pool"
 	sound = 'sound/effects/splash.ogg'
+	flags_1 = CAN_BE_DIRTY_1|RAD_CONTAIN_CONTENTS // contains most of the rads on the tile within that tile
 	var/id = null //Set me if you don't want the pool and the pump to be in the same area, or you have multiple pools per area.
 	var/obj/effect/water_overlay = null
 
@@ -81,7 +82,7 @@ Place a pool filter somewhere in the pool if you want people to be able to modif
 	var/atom/movable/AM = dropping
 	var/datum/component/swimming/S = dropping.GetComponent(/datum/component/swimming)
 	if(S)
-		if(do_after(user, 1 SECONDS, target=src))
+		if(do_after(user, 1 SECONDS, src))
 			S.RemoveComponent()
 			visible_message("<span class='notice'>[dropping] climbs out of the pool.</span>")
 			AM.forceMove(src)
@@ -100,7 +101,7 @@ Place a pool filter somewhere in the pool if you want people to be able to modif
 		 "<span class='notice'>You start to lower [dropping] down into [src].</span>")
 	else
 		to_chat(user, "<span class='notice'>You start climbing down into [src]...")
-	if(do_after(user, 4 SECONDS, target=src))
+	if(do_after(user, 4 SECONDS, src))
 		splash(dropping)
 
 /datum/mood_event/poolparty
@@ -126,7 +127,7 @@ Place a pool filter somewhere in the pool if you want people to be able to modif
 	if(ishuman(user))
 		var/mob/living/carbon/human/F = user
 		var/datum/species/SS = F.dna.species
-		if(MOB_ROBOTIC in SS.inherent_biotypes || ispreternis(F))  //ZAP goes preternis
+		if(MOB_ROBOTIC in SS.inherent_biotypes)  //ZAP goes preternis and IPC
 			zap = 2 //You can protect yourself from water damage with thick clothing.
 		if(F.head && istype(F.head, /obj/item/clothing))
 			var/obj/item/clothing/CH = F.head
@@ -224,12 +225,13 @@ GLOBAL_LIST_EMPTY(pool_filters)
 	var/current_temperature = 300 //current temp
 	var/preset_reagent_type = null //Set this if you want your pump to start filled with a given reagent. SKEWIUM POOL SKEWIUM POOL!
 	var/temp_rate = 0.5
+	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF
 
 /obj/machinery/pool_filter/examine(mob/user)
 	. = ..()
 	. += "<span class='boldnotice'>The thermostat on it reads [current_temperature].</span>"
 
-/obj/machinery/pool_filter/Initialize()
+/obj/machinery/pool_filter/Initialize(mapload)
 	. = ..()
 	create_reagents(100, OPENCONTAINER) //If you're a terrible terrible clown and want to dump reagents into the pool.
 	if(preset_reagent_type)
@@ -302,12 +304,16 @@ GLOBAL_LIST_EMPTY(pool_filters)
 					if(!HAS_TRAIT(C, TRAIT_RESISTHEAT))
 						C.adjustFireLoss(5)
 					to_chat(M, "<span class='danger'>The water is searing hot!</span>")
+				else
+					if(iscarbon(M))	//if temperature is comfy, can be used to warm up or cool down
+						var/body_temperature_difference = current_temperature - C.bodytemperature
+						C.adjust_bodytemperature(min(100, body_temperature_difference))
 
 /obj/structure/pool_ladder/attack_hand(mob/user)
 	var/datum/component/swimming/S = user.GetComponent(/datum/component/swimming)
 	if(S)
 		to_chat(user, "<span class='notice'>You start to climb out of the pool...</span>")
-		if(do_after(user, 1 SECONDS, target=src))
+		if(do_after(user, 1 SECONDS, src))
 			S.RemoveComponent()
 			visible_message("<span class='notice'>[user] climbs out of the pool.</span>")
 			if(!reversed)
@@ -317,7 +323,7 @@ GLOBAL_LIST_EMPTY(pool_filters)
 	else
 		to_chat(user, "<span class='notice'>You start to climb into the pool...</span>")
 		var/turf/T = get_turf(src)
-		if(do_after(user, 1 SECONDS, target=src))
+		if(do_after(user, 1 SECONDS, src))
 			if(!istype(T, /turf/open/indestructible/sound/pool)) //Ugh, fine. Whatever.
 				user.forceMove(get_turf(src))
 			else

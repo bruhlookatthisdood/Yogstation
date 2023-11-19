@@ -87,7 +87,7 @@
 	species = "geranium"
 	plantname = "Geranium Plants"
 	product = /obj/item/reagent_containers/food/snacks/grown/poppy/geranium
-	mutatelist = list()
+	mutatelist = list(/obj/item/seeds/bee_balm)
 	rarity = 10
 
 /obj/item/reagent_containers/food/snacks/grown/poppy/geranium
@@ -151,7 +151,7 @@
 	icon_state = "sunflower"
 	lefthand_file = 'icons/mob/inhands/weapons/plants_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/plants_righthand.dmi'
-	damtype = "fire"
+	damtype = BURN
 	force = 0
 	slot_flags = ITEM_SLOT_HEAD
 	throwforce = 0
@@ -201,7 +201,7 @@
 	icon_dead = "sunflower-dead"
 	product = /obj/item/grown/novaflower
 	mutatelist = list()
-	reagents_add = list(/datum/reagent/consumable/condensedcapsaicin = 0.25, /datum/reagent/consumable/capsaicin = 0.3, /datum/reagent/consumable/nutriment = 0)
+	reagents_add = list(/datum/reagent/consumable/condensedcapsaicin = 0.25, /datum/reagent/consumable/capsaicin = 0.3, /datum/reagent/consumable/nutriment = 0.03)
 	rarity = 20
 
 /obj/item/grown/novaflower
@@ -211,7 +211,7 @@
 	icon_state = "novaflower"
 	lefthand_file = 'icons/mob/inhands/weapons/plants_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/plants_righthand.dmi'
-	damtype = "fire"
+	damtype = BURN
 	force = 0
 	slot_flags = ITEM_SLOT_HEAD
 	throwforce = 0
@@ -233,7 +233,7 @@
 	if(isliving(M))
 		to_chat(M, span_danger("You are lit on fire from the intense heat of the [name]!"))
 		M.adjust_fire_stacks(seed.potency / 20)
-		if(M.IgniteMob())
+		if(M.ignite_mob())
 			message_admins("[ADMIN_LOOKUPFLW(user)] set [ADMIN_LOOKUPFLW(M)] on fire with [src] at [AREACOORD(user)]")
 			log_game("[key_name(user)] set [key_name(M)] on fire with [src] at [AREACOORD(user)]")
 
@@ -269,7 +269,7 @@
 	growing_icon = 'icons/obj/hydroponics/growing_flowers.dmi'
 	icon_grow = "bee_balm-grow"
 	icon_dead = "bee_balm-dead"
-	mutatelist = list(/obj/item/seeds/poppy/geranium, /obj/item/seeds/bee_balm/honey) //Lower odds of becoming honey
+	mutatelist = list(/obj/item/seeds/bee_balm/honey)
 	reagents_add = list(/datum/reagent/medicine/spaceacillin = 0.1, /datum/reagent/space_cleaner/sterilizine = 0.05)
 	rarity = 20
 

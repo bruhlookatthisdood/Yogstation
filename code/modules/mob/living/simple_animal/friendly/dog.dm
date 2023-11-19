@@ -5,21 +5,25 @@
 	icon_state = "blackdog"
 	icon_living = "blackdog"
 	icon_dead = "blackdog_dead"
-	mob_biotypes = list(MOB_ORGANIC, MOB_BEAST)
+	mob_biotypes = MOB_ORGANIC|MOB_BEAST
 	response_help  = "pets"
 	response_disarm = "bops"
 	response_harm   = "kicks"
+	attack_vis_effect = ATTACK_EFFECT_BITE
 	speak = list("YAP", "Woof!", "Bark!", "AUUUUUU")
 	speak_emote = list("barks", "woofs")
 	emote_hear = list("barks!", "woofs!", "yaps.","pants.")
 	emote_see = list("shakes its head.", "chases its tail.","shivers.")
 	faction = list("neutral")
 	see_in_dark = 5
+	lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE
 	speak_chance = 1
 	turns_per_move = 10
 	gold_core_spawnable = FRIENDLY_SPAWN
-
+	can_be_held = TRUE
 	do_footstep = TRUE
+	wuv_happy = "yaps happily!"
+	wuv_angy = "growls!"
 
 //Corgis and pugs are now under one dog subtype
 
@@ -33,8 +37,6 @@
 	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat/slab/corgi = 3, /obj/item/stack/sheet/animalhide/corgi = 1)
 	childtype = list(/mob/living/simple_animal/pet/dog/corgi/puppy = 95, /mob/living/simple_animal/pet/dog/corgi/puppy/void = 5)
 	animal_species = /mob/living/simple_animal/pet/dog
-	gold_core_spawnable = FRIENDLY_SPAWN
-	can_be_held = TRUE
 	collar_type = "corgi"
 	var/obj/item/inventory_head
 	var/obj/item/inventory_back
@@ -72,11 +74,13 @@
 	animal_species = /mob/living/simple_animal/pet/dog/corgi/borgi
 	nofur = TRUE
 
-/mob/living/simple_animal/pet/dog/corgi/borgi/emag_act(user as mob)
-	if(!emagged)
-		emagged = TRUE
-		visible_message(span_warning("[user] swipes a card through [src]."), span_notice("You overload [src]s internal reactor."))
-		addtimer(CALLBACK(src, .proc/explode), 1000)
+/mob/living/simple_animal/pet/dog/corgi/borgi/emag_act(mob/user, obj/item/card/emag/emag_card)
+	if(emagged)
+		return FALSE
+	emagged = TRUE
+	visible_message(span_warning("[user] swipes a card through [src]."), span_notice("You overload [src]s internal reactor."))
+	addtimer(CALLBACK(src, PROC_REF(explode)), 1000)
+	return TRUE
 
 /mob/living/simple_animal/pet/dog/corgi/borgi/proc/explode()
 	visible_message(span_warning("[src] makes an odd whining noise."))
@@ -105,7 +109,6 @@
 	icon_living = "pug"
 	icon_dead = "pug_dead"
 	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat/slab/pug = 3)
-	gold_core_spawnable = FRIENDLY_SPAWN
 	collar_type = "pug"
 
 /mob/living/simple_animal/pet/dog/corgi/exoticcorgi
@@ -118,19 +121,18 @@
 	animal_species = /mob/living/simple_animal/pet/dog/corgi/exoticcorgi
 	nofur = TRUE
 
-/mob/living/simple_animal/pet/dog/Initialize()
+/mob/living/simple_animal/pet/dog/Initialize(mapload)
 	. = ..()
 	var/dog_area = get_area(src)
 	for(var/obj/structure/bed/dogbed/D in dog_area)
-		if(!D.owner)
-			D.update_owner(src)
+		if(D.update_owner(src)) //No muscling in on my turf you fucking parrot
 			break
 
-/mob/living/simple_animal/pet/dog/corgi/Initialize()
+/mob/living/simple_animal/pet/dog/corgi/Initialize(mapload)
 	. = ..()
 	regenerate_icons()
 
-/mob/living/simple_animal/pet/dog/corgi/exoticcorgi/Initialize()
+/mob/living/simple_animal/pet/dog/corgi/exoticcorgi/Initialize(mapload)
 		. = ..()
 		var/newcolor = rgb(rand(0, 255), rand(0, 255), rand(0, 255))
 		add_atom_colour(newcolor, FIXED_COLOUR_PRIORITY)
@@ -180,7 +182,7 @@
 			to_chat(user, span_warning(" You can't shave this corgi, it doesn't have a fur coat!"))
 			return
 		user.visible_message("[user] starts to shave [src] using \the [O].", span_notice("You start to shave [src] using \the [O]..."))
-		if(do_after(user, 5 SECONDS, target = src))
+		if(do_after(user, 5 SECONDS, src))
 			user.visible_message("[user] shaves [src]'s hair using \the [O].")
 			playsound(loc, 'sound/items/welder2.ogg', 20, 1)
 			shaved = TRUE
@@ -193,13 +195,6 @@
 		return
 	..()
 	update_corgi_fluff()
-
-/mob/living/simple_animal/pet/dog/corgi/mob_pickup(mob/living/L)
-	var/obj/item/clothing/head/mob_holder/holder = new(get_turf(src), src, "corgi", null, 'icons/mob/pets_held_lh.dmi', 'icons/mob/pets_held_rh.dmi', FALSE)
-	if(!L.put_in_hands(holder))
-		qdel(holder)
-	else
-		L.visible_message(span_warning("[L] scoops up [src]!"))
 
 /mob/living/simple_animal/pet/dog/corgi/Topic(href, href_list)
 	if(!(iscarbon(usr) || iscyborg(usr)) || !usr.canUseTopic(src, BE_CLOSE, FALSE, NO_TK))
@@ -285,7 +280,7 @@
 							step_rand(item_to_add)
 						for(var/i in list(1,2,4,8,4,8,4,dir))
 							setDir(i)
-							sleep(1)
+							sleep(0.1 SECONDS)
 						return
 
 					item_to_add.forceMove(src)
@@ -305,7 +300,7 @@
 /mob/living/simple_animal/pet/dog/corgi/proc/place_on_head(obj/item/item_to_add, mob/user)
 
 	if(istype(item_to_add, /obj/item/grenade/plastic)) // last thing he ever wears, I guess
-		INVOKE_ASYNC(item_to_add, /obj/item.proc/afterattack, src, user, 1)
+		INVOKE_ASYNC(item_to_add, TYPE_PROC_REF(/obj/item, afterattack), src, user, 1)
 		return
 
 	if(inventory_head)
@@ -347,7 +342,7 @@
 			step_rand(item_to_add)
 		for(var/i in list(1,2,4,8,4,8,4,dir))
 			setDir(i)
-			sleep(1)
+			sleep(0.1 SECONDS)
 
 	return valid
 
@@ -389,7 +384,7 @@
 	var/memory_saved = FALSE
 	var/saved_head //path
 
-/mob/living/simple_animal/pet/dog/corgi/Ian/Initialize()
+/mob/living/simple_animal/pet/dog/corgi/Ian/Initialize(mapload)
 	. = ..()
 	//parent call must happen first to ensure IAN
 	//is not in nullspace when child puppies spawn
@@ -407,7 +402,7 @@
 		desc = "At a ripe old age of [record_age] Ian's not as spry as he used to be, but he'll always be the HoP's beloved corgi." //RIP
 		turns_per_move = 20
 
-/mob/living/simple_animal/pet/dog/corgi/Ian/Life()
+/mob/living/simple_animal/pet/dog/corgi/Ian/Life(seconds_per_tick = SSMOBS_DT, times_fired)
 	if(!stat && SSticker.current_state == GAME_STATE_FINISHED && !memory_saved)
 		Write_Memory(FALSE)
 		memory_saved = TRUE
@@ -460,7 +455,7 @@
 	fdel(json_file)
 	WRITE_FILE(json_file, json_encode(file_data))
 
-/mob/living/simple_animal/pet/dog/corgi/Ian/Life()
+/mob/living/simple_animal/pet/dog/corgi/Ian/Life(seconds_per_tick = SSMOBS_DT, times_fired)
 	..()
 
 	//Feeding, chasing food, FOOOOODDDD
@@ -481,9 +476,9 @@
 			if(movement_target)
 				stop_automated_movement = 1
 				step_to(src,movement_target,1)
-				sleep(3)
+				sleep(0.3 SECONDS)
 				step_to(src,movement_target,1)
-				sleep(3)
+				sleep(0.3 SECONDS)
 				step_to(src,movement_target,1)
 
 				if(movement_target)		//Not redundant due to sleeps, Item can be gone in 6 decisecomds
@@ -515,12 +510,13 @@
 			spawn(0)
 				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 					setDir(i)
-					sleep(1)
+					sleep(0.1 SECONDS)
 
 /mob/living/simple_animal/pet/dog/corgi/Ian/narsie_act()
 	playsound(src, 'sound/magic/demon_dies.ogg', 75, TRUE)
 	var/mob/living/simple_animal/pet/dog/corgi/narsie/N = new(loc)
 	N.setDir(dir)
+	N.ckey = ckey
 	gib()
 
 /mob/living/simple_animal/pet/dog/corgi/narsie
@@ -534,7 +530,7 @@
 	nofur = TRUE
 	unique_pet = TRUE
 
-/mob/living/simple_animal/pet/dog/corgi/narsie/Life()
+/mob/living/simple_animal/pet/dog/corgi/narsie/Life(seconds_per_tick = SSMOBS_DT, times_fired)
 	..()
 	for(var/mob/living/simple_animal/pet/P in range(1, src))
 		if(P != src && prob(5))
@@ -609,7 +605,6 @@
 	icon_dead = "puppy_dead"
 	density = FALSE
 	pass_flags = PASSMOB
-	mob_size = MOB_SIZE_SMALL
 	collar_type = "puppy"
 
 //puppies cannot wear anything.
@@ -665,7 +660,7 @@
 		return
 	..()
 
-/mob/living/simple_animal/pet/dog/corgi/Lisa/Life()
+/mob/living/simple_animal/pet/dog/corgi/Lisa/Life(seconds_per_tick = SSMOBS_DT, times_fired)
 	..()
 
 	make_babies()
@@ -676,9 +671,9 @@
 			spawn(0)
 				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 					setDir(i)
-					sleep(1)
+					sleep(0.1 SECONDS)
 
-/mob/living/simple_animal/pet/dog/pug/Life()
+/mob/living/simple_animal/pet/dog/pug/Life(seconds_per_tick = SSMOBS_DT, times_fired)
 	..()
 
 	if(!stat && !resting && !buckled)
@@ -687,26 +682,7 @@
 			spawn(0)
 				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 					setDir(i)
-					sleep(1)
-
-/mob/living/simple_animal/pet/dog/attack_hand(mob/living/carbon/human/M)
-	. = ..()
-	switch(M.a_intent)
-		if(INTENT_HELP)
-			wuv(1,M)
-		if(INTENT_HARM)
-			wuv(-1,M)
-
-/mob/living/simple_animal/pet/dog/proc/wuv(change, mob/M)
-	if(change)
-		if(change > 0)
-			if(M && stat != DEAD) // Added check to see if this mob (the dog) is dead to fix issue 2454
-				new /obj/effect/temp_visual/heart(loc)
-				emote("me", 1, "yaps happily!", TRUE)
-				SEND_SIGNAL(M, COMSIG_ADD_MOOD_EVENT, src, /datum/mood_event/pet_animal, src)
-		else
-			if(M && stat != DEAD) // Same check here, even though emote checks it as well (poor form to check it only in the help case)
-				emote("me", 1, "growls!", TRUE)
+					sleep(0.1 SECONDS)
 
 /mob/living/simple_animal/pet/dog/bullterrier
 	name = "\improper bull terrier"
@@ -717,5 +693,4 @@
 	icon_living = "bullterrier"
 	icon_dead = "bullterrier_dead"
 	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat/slab/corgi = 3) // Would feel redundant to add more new dog meats.
-	gold_core_spawnable = FRIENDLY_SPAWN
 	collar_type = "bullterrier"

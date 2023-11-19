@@ -7,7 +7,7 @@
 	hitsound = 'sound/weapons/smash.ogg'
 	flags_1 = CONDUCT_1
 	throwforce = 10
-	w_class = WEIGHT_CLASS_NORMAL
+	w_class = WEIGHT_CLASS_BULKY
 	throw_speed = 2
 	throw_range = 7
 	force = 10
@@ -15,9 +15,10 @@
 	attack_verb = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")
 	dog_fashion = /datum/dog_fashion/back
 	resistance_flags = FIRE_PROOF
-	var/max_water = 50
+	var/max_water = 200
 	var/last_use = 1
 	var/chem = /datum/reagent/water
+	var/chem_amount = 2 //how much of the chem is added to each spray (x5 because of how many sprays per shot)
 	var/safety = TRUE
 	var/refilling = FALSE
 	var/tanktype = /obj/structure/reagent_dispensers/watertank
@@ -38,6 +39,7 @@
 	force = 3
 	materials = list(/datum/material/iron = 50, /datum/material/glass = 40)
 	max_water = 30
+	chem_amount = 1
 	sprite_name = "miniFE"
 	dog_fashion = null
 
@@ -45,7 +47,7 @@
 	create_reagents(max_water, AMOUNT_VISIBLE)
 	reagents.add_reagent(chem, max_water)
 
-/obj/item/extinguisher/Initialize()
+/obj/item/extinguisher/Initialize(mapload)
 	. = ..()
 	refill()
 
@@ -54,6 +56,9 @@
 	desc = "Used to stop thermonuclear fires from spreading inside your engine."
 	icon_state = "foam_extinguisher0"
 	//item_state = "foam_extinguisher" needs sprite
+	max_water = 150
+	chem_amount = 1
+	w_class = WEIGHT_CLASS_NORMAL
 	dog_fashion = null
 	chem = /datum/reagent/firefighting_foam
 	tanktype = /obj/structure/reagent_dispensers/foamtank
@@ -116,9 +121,9 @@
 		else
 			to_chat(user, span_warning("\The [W] is empty!"))
 		safety = safety_save
-		return 1
+		return TRUE
 	else
-		return 0
+		return FALSE
 
 /obj/item/extinguisher/afterattack(atom/target, mob/user , flag)
 	. = ..()
@@ -174,13 +179,13 @@
 			var/datum/reagents/R = new/datum/reagents(5)
 			W.reagents = R
 			R.my_atom = W
-			reagents.trans_to(W,1, transfered_by = user)
+			reagents.trans_to(W, chem_amount, transfered_by = user)
 
 		//Make em move dat ass, hun
 		addtimer(CALLBACK(src, /obj/item/extinguisher/proc/move_particles, water_particles), 2)
 
 //Particle movement loop
-/obj/item/extinguisher/proc/move_particles(var/list/particles, var/repetition=0)
+/obj/item/extinguisher/proc/move_particles(list/particles, repetition=0)
 	//Check if there's anything in here first
 	if(!particles || particles.len == 0)
 		return
@@ -202,7 +207,7 @@
 		addtimer(CALLBACK(src, /obj/item/extinguisher/proc/move_particles, particles, repetition), 2)
 
 //Chair movement loop
-/obj/item/extinguisher/proc/move_chair(var/obj/B, var/movementdirection, var/repetition=0)
+/obj/item/extinguisher/proc/move_chair(obj/B, movementdirection, repetition=0)
 	step(B, movementdirection)
 
 	var/timer_seconds
@@ -224,7 +229,7 @@
 		return
 	EmptyExtinguisher(user)
 
-/obj/item/extinguisher/proc/EmptyExtinguisher(var/mob/user)
+/obj/item/extinguisher/proc/EmptyExtinguisher(mob/user)
 	if(loc == user && reagents.total_volume)
 		reagents.clear_reagents()
 

@@ -8,6 +8,10 @@
 	var/giftwrapped = FALSE
 	var/sortTag = 0
 
+/obj/structure/bigDelivery/Initialize(mapload)
+	. = ..()
+	RegisterSignal(src, COMSIG_MOVABLE_DISPOSING, PROC_REF(disposal_handling))
+
 /obj/structure/bigDelivery/interact(mob/user)
 	playsound(src.loc, 'sound/items/poster_ripped.ogg', 50, 1)
 	qdel(src)
@@ -68,7 +72,7 @@
 		AM.relay_container_resist(user, O)
 		return
 	to_chat(user, span_notice("You lean on the back of [O] and start pushing to rip the wrapping around it."))
-	if(do_after(user, 5 SECONDS, target = O))
+	if(do_after(user, 5 SECONDS, O))
 		if(!user || user.stat != CONSCIOUS || user.loc != O || O.loc != src )
 			return
 		to_chat(user, span_notice("You successfully removed [O]'s wrapping !"))
@@ -79,6 +83,9 @@
 		if(user.loc == src) //so we don't get the message if we resisted multiple times and succeeded.
 			to_chat(user, span_warning("You fail to remove [O]'s wrapping!"))
 
+/obj/structure/bigDelivery/proc/disposal_handling(disposal_source, obj/structure/disposalholder/disposal_holder, obj/machinery/disposal/disposal_machine, hasmob)
+	if(!hasmob)
+		disposal_holder.destinationTag = sortTag
 
 /obj/item/smallDelivery
 	name = "parcel"
@@ -88,6 +95,14 @@
 	item_state = "deliverypackage"
 	var/giftwrapped = 0
 	var/sortTag = 0
+
+/obj/item/smallDelivery/Initialize(mapload)
+	. = ..()
+	RegisterSignal(src, COMSIG_MOVABLE_DISPOSING, PROC_REF(disposal_handling))
+
+/obj/item/smallDelivery/proc/disposal_handling(disposal_source, obj/structure/disposalholder/disposal_holder, obj/machinery/disposal/disposal_machine, hasmob)
+	if(!hasmob)
+		disposal_holder.destinationTag = sortTag
 
 /obj/item/smallDelivery/contents_explosion(severity, target)
 	for(var/thing in contents)
@@ -184,7 +199,7 @@
 /obj/item/destTagger/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user,src,ui)
 	if(!ui)
-		ui = new(user,src,"DestinationTagger")
+		ui = new(user, src, "DestinationTagger")
 		ui.open()
 
 /obj/item/destTagger/ui_act(action,list/params)
@@ -198,7 +213,7 @@
 
 /obj/item/destTagger/ui_data(mob/user)
 	var/list/data = list()
-	data["destinations"] = GLOB.TAGGERLOCATIONS
-	data["currentTag"] = currTag
+	data["destinations"] = GLOB.TAGGERLOCATIONS_DEPARTMENTAL
+	data["currentTag"] = currTag ? GLOB.TAGGERLOCATIONS[currTag] : "None"
 
 	return data

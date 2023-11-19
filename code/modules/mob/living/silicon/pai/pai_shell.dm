@@ -17,7 +17,7 @@
 		return FALSE
 
 	emittersemicd = TRUE
-	addtimer(CALLBACK(src, .proc/emittercool), emittercd)
+	addtimer(CALLBACK(src, PROC_REF(emittercool)), emittercd)
 	mobility_flags = MOBILITY_FLAGS_DEFAULT
 	density = TRUE
 	if(istype(card.loc, /obj/item/pda))
@@ -36,6 +36,7 @@
 		client.eye = src
 	set_light(0)
 	icon_state = "[chassis]"
+	held_state = "[chassis]"
 	visible_message(span_boldnotice("[src] folds out its holochassis emitter and forms a holoshell around itself!"))
 	holoform = TRUE
 
@@ -45,9 +46,9 @@
 /mob/living/silicon/pai/proc/fold_in(force = FALSE)
 	emittersemicd = TRUE
 	if(!force)
-		addtimer(CALLBACK(src, .proc/emittercool), emittercd)
+		addtimer(CALLBACK(src, PROC_REF(emittercool)), emittercd)
 	else
-		addtimer(CALLBACK(src, .proc/emittercool), emitteroverloadcd)
+		addtimer(CALLBACK(src, PROC_REF(emittercool)), emitteroverloadcd)
 	icon_state = "[chassis]"
 	if(!holoform)
 		. = fold_out(force)
@@ -74,6 +75,8 @@
 	if(!choice)
 		return FALSE
 	chassis = choice
+	icon_state = "[chassis]"
+	held_state = "[chassis]"
 	update_resting()
 	to_chat(src, span_boldnotice("You switch your holochassis projection composite to [chassis]."))
 
@@ -96,13 +99,6 @@
 	else
 		set_light(0)
 		to_chat(src, span_notice("You disable your integrated light."))
-
-/mob/living/silicon/pai/mob_pickup(mob/living/L)
-	var/obj/item/clothing/head/mob_holder/holder = new(get_turf(src), src, chassis, item_head_icon, item_lh_icon, item_rh_icon)
-	if(!L.put_in_hands(holder))
-		qdel(holder)
-	else
-		L.visible_message(span_warning("[L] scoops up [src]!"))
 
 /mob/living/silicon/pai/mob_try_pickup(mob/living/user)
 	if(!possible_chassis[chassis])

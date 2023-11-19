@@ -3,13 +3,45 @@
 //Damage and status effect defines
 
 //Damage defines //TODO: merge these down to reduce on defines
+
+/// Physical fracturing and warping of the material.
 #define BRUTE		"brute"
-#define BURN		"fire"
-#define TOX			"tox"
-#define OXY			"oxy"
+/// Scorching and charring of the material.
+#define BURN		"burn"
+/// Poisoning. Mostly caused by reagents.
+#define TOX			"toxin"
+/// Suffocation.
+#define OXY			"oxygen"
+/// Cellular degredation. Rare and difficult to treat.
 #define CLONE		"clone"
+/// Exhaustion and nonlethal damage.
 #define STAMINA 	"stamina"
+/// Brain damage. Should probably be decomissioned and replaced with proper organ damage.
 #define BRAIN		"brain"
+
+//Damage flag defines //
+/// Involves a melee attack or a thrown object.
+#define MELEE		"melee"
+/// Involves a solid projectile.
+#define BULLET		"bullet"
+/// Involves a laser.
+#define LASER		"laser"
+/// Involves an EMP or energy-based projectile.
+#define ENERGY		"energy"
+/// Involves a shockwave, usually from an explosion.
+#define BOMB		"bomb"
+/// Involved in checking wheter a disease can infect or spread. Also involved in xeno neurotoxin.
+#define BIO			"bio"
+/// Involves ionizing radiation.
+#define RAD			"rad"
+/// Involves fire or temperature extremes.
+#define FIRE		"fire"
+/// Involves corrosive substances.
+#define ACID		"acid"
+/// Involves magic.
+#define MAGIC		"magic"
+/// Involved in checking the likelyhood of applying a wound to a mob.
+#define WOUND		"wound"
 
 //bitflag damage defines used for suicide_act
 #define BRUTELOSS 	            	(1<<0)
@@ -48,15 +80,15 @@
 
 //Actual combat defines
 
-//click cooldowns, in tenths of a second, used for various combat actions
-#define CLICK_CD_MELEE 8
-#define CLICK_CD_RANGE 4
-#define CLICK_CD_RAPID 2
-#define CLICK_CD_CLICK_ABILITY 6
-#define CLICK_CD_BREAKOUT 100
-#define CLICK_CD_HANDCUFFED 10
-#define CLICK_CD_RESIST 20
-#define CLICK_CD_GRABBING 10
+//click cooldowns, in seconds, used for various combat actions
+#define CLICK_CD_MELEE 0.8 SECONDS
+#define CLICK_CD_RANGE 0.4 SECONDS
+#define CLICK_CD_RAPID 0.2 SECONDS
+#define CLICK_CD_CLICK_ABILITY 0.6 SECONDS
+#define CLICK_CD_BREAKOUT 10 SECONDS
+#define CLICK_CD_HANDCUFFED 1 SECONDS
+#define CLICK_CD_RESIST 2 SECONDS
+#define CLICK_CD_GRABBING 1 SECONDS
 
 //Cuff resist speeds
 #define FAST_CUFFBREAK 1
@@ -165,9 +197,22 @@ GLOBAL_LIST_INIT(shove_disarming_types, typecacheof(list(
 ///ammo box will have a different state for full and empty; <icon_state>-max_ammo and <icon_state>-0
 #define AMMO_BOX_FULL_EMPTY 2
 
+#define SUPPRESSED_NONE 0
+#define SUPPRESSED_QUIET 1 ///standard suppressed
+#define SUPPRESSED_VERY 2 /// no message
+
 //Projectile Reflect
 #define REFLECT_NORMAL 				(1<<0)
 #define REFLECT_FAKEPROJECTILE		(1<<1)
+
+// Casing Flags //
+/* Flags for /obj/item/ammo_casing */
+/// If the ammo casing doesn't have a different live and spent icon, it will just use the non-live sprite instead
+#define CASINGFLAG_NO_LIVE_SPRITE 	(1<<0)
+/// If the ammo casing should be force eject when fired even when the gun is not semi-auto, useful for casings that delete themselves. Only works with balistic weapons
+#define CASINGFLAG_FORCE_CLEAR_CHAMBER		(1<<1)
+/// If the ammo casing should not spin when thrown
+#define CASINGFLAG_NOT_HEAVY_METAL	(1<<2)
 
 //Object/Item sharpness
 #define SHARP_NONE			0
@@ -213,20 +258,22 @@ GLOBAL_LIST_INIT(shove_disarming_types, typecacheof(list(
 #define BODY_ZONE_PRECISE_L_FOOT	"l_foot"
 #define BODY_ZONE_PRECISE_R_FOOT	"r_foot"
 
-//We will round to this value in damage calculations.
+/// We will round to this value in damage calculations.
 #define DAMAGE_PRECISION 0.1
+/// Damage transferred to the chest when hitting a limb that has reached the damage cap
+#define DAMAGE_TRANSFER_COEFFICIENT 0.33
 
 //bullet_act() return values
 /// It's a successful hit, whatever that means in the context of the thing it's hitting.
-#define BULLET_ACT_HIT				"HIT"		//It's a successful hit, whatever that means in the context of the thing it's hitting.
+#define BULLET_ACT_HIT				(1<<0)		//It's a successful hit, whatever that means in the context of the thing it's hitting.
 /// It's a blocked hit, whatever that means in the context of the thing it's hitting.
-#define BULLET_ACT_BLOCK			"BLOCK"
+#define BULLET_ACT_BLOCK			(1<<1)
 /// It pierces through the object regardless of the bullet being piercing by default.
-#define BULLET_ACT_FORCE_PIERCE		"PIERCE"
+#define BULLET_ACT_FORCE_PIERCE		(1<<2)
 /// It hit us but it should hit something on the same turf too. Usually used for turfs.
-#define BULLET_ACT_TURF				"TURF"
+#define BULLET_ACT_TURF				(1<<3)
 /// It hit something, but it should just keep going until it hit something else
-#define BULLET_ACT_PENETRATE		"PENETRATE"
+#define BULLET_ACT_PENETRATE		(1<<4)
 
 // Weather immunities //
 #define WEATHER_STORM "storm"

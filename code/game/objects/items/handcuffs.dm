@@ -11,7 +11,7 @@
 	if(iscarbon(loc))
 		var/mob/living/carbon/M = loc
 		if(M.handcuffed == src)
-			M.handcuffed = null
+			M.set_handcuffed(null)
 			M.update_handcuffed()
 			if(M.buckled && M.buckled.buckle_requires_restraints)
 				M.buckled.unbuckle_mob(M)
@@ -27,6 +27,7 @@
 	desc = "Use this to keep prisoners in line."
 	gender = PLURAL
 	icon_state = "handcuff"
+	item_state = "handcuff"
 	lefthand_file = 'icons/mob/inhands/equipment/security_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/security_righthand.dmi'
 	flags_1 = CONDUCT_1
@@ -37,7 +38,7 @@
 	throw_range = 5
 	materials = list(/datum/material/iron=500)
 	breakouttime = 600 //Deciseconds = 60s = 1 minute
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 50, "acid" = 50)
+	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 50, ACID = 50)
 	break_strength = 4
 	var/cuffsound = 'sound/weapons/handcuffs.ogg'
 	var/trashtype = null //for disposable cuffs
@@ -63,7 +64,18 @@
 								span_userdanger("[user] is trying to put [src.name] on [C]!"))
 
 			playsound(loc, cuffsound, 30, 1, -2)
-			if(do_mob(user, C, 30) && (C.get_num_arms(FALSE) >= 2 || C.get_arm_ignore()))
+
+			// Yogs start: Prevents darkspawn from cheesing their bead sleep to cuff and kill
+			if(is_darkspawn_or_veil(user) && C.has_status_effect(STATUS_EFFECT_BROKEN_WILL) && (C.get_num_arms(FALSE) >= 2 || C.get_arm_ignore()))
+				to_chat(user, span_boldannounce("Restraining [C] will wake them up! Are you sure you want to do this?"))
+				C.visible_message(span_warning("[C] jerks in their sleep as they are restrained!"))
+				to_chat(C, span_boldannounce("Someone handles your arms roughly, pulling you towards wakefulness!"))
+				if(do_after(user, 1.5 SECONDS, C, progress = FALSE)) // No progress bar
+					C.remove_status_effect(STATUS_EFFECT_BROKEN_WILL)
+					C.SetUnconscious(0)
+			// Yogs end
+
+			if(do_after(user, 3 SECONDS, C) && (C.get_num_arms(FALSE) >= 2 || C.get_arm_ignore()))
 				if(iscyborg(user))
 					apply_cuffs(C, user, TRUE)
 				else
@@ -78,7 +90,7 @@
 		else
 			to_chat(user, span_warning("[C] doesn't have two hands..."))
 
-/obj/item/restraints/handcuffs/proc/apply_cuffs(mob/living/carbon/target, mob/user, var/dispense = 0)
+/obj/item/restraints/handcuffs/proc/apply_cuffs(mob/living/carbon/target, mob/user, dispense = 0)
 	if(target.handcuffed)
 		return
 
@@ -92,7 +104,7 @@
 		cuffs = new type()
 
 	cuffs.forceMove(target)
-	target.handcuffed = cuffs
+	target.set_handcuffed(cuffs)
 
 	target.update_handcuffed()
 	if(trashtype && !dispense)
@@ -104,77 +116,39 @@
 	desc = "A pair of restraints fashioned from long strands of flesh."
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "sinewcuff"
-	item_state = "sinewcuff"
 	materials = null
-	item_color = "white"
-	color = "#000000"
+	color = null
 
 /obj/item/restraints/handcuffs/cable
 	name = "cable restraints"
 	desc = "Looks like some cables tied together. Could be used to tie something up."
-	icon_state = "cuff"
+	icon_state = "zipties"
 	item_state = "coil"
-	item_color = "red"
-	color = "#ff0000"
+	color = CABLE_HEX_COLOR_RED
 	lefthand_file = 'icons/mob/inhands/equipment/tools_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/tools_righthand.dmi'
 	materials = list(/datum/material/iron=150, /datum/material/glass=75)
-	breakouttime = 300 //Deciseconds = 30s
+	breakouttime = 30 SECONDS
 	break_strength = 2
 	cuffsound = 'sound/weapons/cablecuff.ogg'
+	///for generating the correct icons based off the original cable's color.
+	var/cable_color = CABLE_COLOR_RED
 
-/obj/item/restraints/handcuffs/cable/Initialize(mapload, param_color)
+/obj/item/restraints/handcuffs/cable/Initialize(mapload, new_color)
 	. = ..()
+	if(new_color)
+		set_cable_color(new_color || cable_color)
 
-	var/list/cable_colors = GLOB.cable_colors
-	item_color = param_color || item_color || pick(cable_colors)
-	if(cable_colors[item_color])
-		item_color = cable_colors[item_color]
-	update_icon()
+/obj/item/restraints/handcuffs/cable/proc/set_cable_color(new_color)
+	color = GLOB.cable_colors[new_color]
+	cable_color = new_color
 
-/obj/item/restraints/handcuffs/cable/update_icon()
-	color = null
-	add_atom_colour(item_color, FIXED_COLOUR_PRIORITY)
-
-/obj/item/restraints/handcuffs/cable/red
-	item_color = "red"
-	color = "#ff0000"
-
-/obj/item/restraints/handcuffs/cable/yellow
-	item_color = "yellow"
-	color = "#ffff00"
-
-/obj/item/restraints/handcuffs/cable/blue
-	item_color = "blue"
-	color = "#1919c8"
-
-/obj/item/restraints/handcuffs/cable/green
-	item_color = "green"
-	color = "#00aa00"
-
-/obj/item/restraints/handcuffs/cable/pink
-	item_color = "pink"
-	color = "#ff3ccd"
-
-/obj/item/restraints/handcuffs/cable/orange
-	item_color = "orange"
-	color = "#ff8000"
-
-/obj/item/restraints/handcuffs/cable/cyan
-	item_color = "cyan"
-	color = "#00ffff"
-
-/obj/item/restraints/handcuffs/cable/white
-	item_color = "white"
-
-/obj/item/restraints/handcuffs/alien
-	icon_state = "handcuffAlien"
-
-/obj/item/restraints/handcuffs/fake
-	name = "fake handcuffs"
-	desc = "Fake handcuffs meant for gag purposes."
-	breakouttime = 10 //Deciseconds = 1s
-	break_strength = 1
+/obj/item/restraints/handcuffs/cable/vv_edit_var(vname, vval)
+	if(vname == NAMEOF(src, cable_color))
+		set_cable_color(vval)
+		datum_flags |= DF_VAR_EDITED
+		return TRUE
+	return ..()
 
 /obj/item/restraints/handcuffs/cable/attackby(obj/item/I, mob/user, params)
 	..()
@@ -195,7 +169,7 @@
 			to_chat(user, span_warning("You need at least six metal sheets to make good enough weights!"))
 			return
 		to_chat(user, span_notice("You begin to apply [I] to [src]..."))
-		if(do_after(user, 3.5 SECONDS, target = src))
+		if(do_after(user, 3.5 SECONDS, src))
 			if(M.get_amount() < 6 || !M)
 				return
 			var/obj/item/restraints/legcuffs/bola/S = new /obj/item/restraints/legcuffs/bola
@@ -207,25 +181,59 @@
 	else
 		return ..()
 
+/obj/item/restraints/handcuffs/cable/red
+	cable_color = CABLE_COLOR_RED
+
+/obj/item/restraints/handcuffs/cable/yellow
+	cable_color = CABLE_COLOR_YELLOW
+
+/obj/item/restraints/handcuffs/cable/blue
+	cable_color = CABLE_COLOR_BLUE
+
+/obj/item/restraints/handcuffs/cable/green
+	cable_color = CABLE_COLOR_GREEN
+
+/obj/item/restraints/handcuffs/cable/pink
+	cable_color = CABLE_COLOR_PINK
+
+/obj/item/restraints/handcuffs/cable/orange
+	cable_color = CABLE_COLOR_ORANGE
+
+/obj/item/restraints/handcuffs/cable/cyan
+	cable_color = CABLE_COLOR_CYAN
+
+/obj/item/restraints/handcuffs/cable/white
+	cable_color = CABLE_COLOR_WHITE
+
+/obj/item/restraints/handcuffs/cable/brown
+	cable_color = CABLE_COLOR_BROWN
+
 /obj/item/restraints/handcuffs/cable/zipties
 	name = "zipties"
 	desc = "Plastic, disposable zipties that can be used to restrain temporarily but are destroyed after use."
-	icon_state = "cuff"
 	lefthand_file = 'icons/mob/inhands/equipment/security_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/security_righthand.dmi'
 	materials = list()
-	breakouttime = 450 //Deciseconds = 45s
+	breakouttime = 45 SECONDS
 	trashtype = /obj/item/restraints/handcuffs/cable/zipties/used
-	item_color = "white"
+	color = null
 	break_strength = 3
 
 /obj/item/restraints/handcuffs/cable/zipties/used
 	desc = "A pair of broken zipties."
-	icon_state = "cuff_used"
-	item_state = "cuff"
+	icon_state = "zipties_used"
 
 /obj/item/restraints/handcuffs/cable/zipties/used/attack()
 	return
+
+/obj/item/restraints/handcuffs/alien
+	icon_state = "handcuffAlien"
+
+/obj/item/restraints/handcuffs/fake
+	name = "fake handcuffs"
+	desc = "Fake handcuffs meant for gag purposes."
+	breakouttime = 10 //Deciseconds = 1s
+	break_strength = 1
 
 //Legcuffs
 
@@ -234,6 +242,7 @@
 	desc = "Use this to keep prisoners in line."
 	gender = PLURAL
 	icon_state = "handcuff"
+	item_state = "legcuff"
 	lefthand_file = 'icons/mob/inhands/equipment/security_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/security_righthand.dmi'
 	flags_1 = CONDUCT_1
@@ -253,28 +262,32 @@
 	var/armed = 0
 	var/trap_damage = 20
 
-/obj/item/restraints/legcuffs/beartrap/Initialize()
+/obj/item/restraints/legcuffs/beartrap/Initialize(mapload)
 	. = ..()
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
-/obj/item/restraints/legcuffs/beartrap/update_icon()
+/obj/item/restraints/legcuffs/beartrap/update_icon_state()
+	. = ..()
 	icon_state = "[initial(icon_state)][armed]"
 
 /obj/item/restraints/legcuffs/beartrap/suicide_act(mob/user)
-	user.visible_message(span_suicide("[user] is sticking [user.p_their()] head in the [src.name]! It looks like [user.p_theyre()] trying to commit suicide!"))
-	playsound(loc, 'sound/weapons/bladeslice.ogg', 50, 1, -1)
-	return (BRUTELOSS)
+	if(armed)
+		user.visible_message(span_suicide("[user] is sticking [user.p_their()] head in the [name]! It looks like [user.p_theyre()] trying to commit suicide!"))
+		playsound(loc, 'sound/weapons/bladeslice.ogg', 50, 1, -1)
+		return BRUTELOSS
+	user.visible_message(span_suicide("[user] is sticking [user.p_their()] head in the [name] but the [name] is disarmed!"))
+	return SHAME
 
 /obj/item/restraints/legcuffs/beartrap/attack_self(mob/user)
 	..()
 	if(ishuman(user) && !user.stat && !user.restrained())
 		armed = !armed
-		update_icon()
+		update_appearance(UPDATE_ICON)
 		to_chat(user, span_notice("[src] is now [armed ? "armed" : "disarmed"]"))
 
 /obj/item/restraints/legcuffs/beartrap/proc/close_trap()
 	armed = FALSE
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	playsound(src, 'sound/effects/snap.ogg', 50, TRUE)
 
 /obj/item/restraints/legcuffs/beartrap/Crossed(AM as mob|obj)
@@ -323,9 +336,9 @@
 	flags_1 = NONE
 	break_strength = 2
 
-/obj/item/restraints/legcuffs/beartrap/energy/Initialize()
+/obj/item/restraints/legcuffs/beartrap/energy/Initialize(mapload)
 	. = ..()
-	addtimer(CALLBACK(src, .proc/dissipate), 100)
+	addtimer(CALLBACK(src, PROC_REF(dissipate)), 100)
 
 /obj/item/restraints/legcuffs/beartrap/energy/proc/dissipate()
 	if(!ismob(loc))
@@ -342,6 +355,10 @@
 	name = "bola"
 	desc = "A restraining device designed to be thrown at the target. Upon connecting with said target, it will wrap around their legs, making it difficult for them to move quickly."
 	icon_state = "bola"
+	icon_state_preview = "bola_preview"
+	item_state = "bola"
+	lefthand_file = 'icons/mob/inhands/weapons/thrown_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/weapons/thrown_righthand.dmi'
 	breakouttime = 35//easy to apply, easy to break out of
 	gender = NEUTER
 	break_strength = 3
@@ -353,34 +370,53 @@
 	playsound(src.loc,'sound/weapons/bolathrow.ogg', 75, 1)
 
 /obj/item/restraints/legcuffs/bola/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
-	if(..() || !iscarbon(hit_atom))//if it gets caught or the target can't be cuffed,
+	if(..())//if it gets caught or the target can't be cuffed,
 		return//abort
-	var/mob/living/carbon/C = hit_atom
-	if(!C.legcuffed && C.get_num_legs(FALSE) >= 2)
-		visible_message(span_danger("\The [src] ensnares [C]!"))
-		C.legcuffed = src
-		forceMove(C)
-		C.update_inv_legcuffed()
-		SSblackbox.record_feedback("tally", "handcuffs", 1, type)
-		to_chat(C, span_userdanger("\The [src] ensnares you!"))
-		C.Immobilize(immobilize)
-		playsound(src, 'sound/effects/snap.ogg', 50, TRUE)
+	if(iscarbon(hit_atom))
+		return impactCarbon(hit_atom, throwingdatum)
+	if(isanimal(hit_atom))
+		return impactAnimal(hit_atom, throwingdatum)
+
+/obj/item/restraints/legcuffs/bola/proc/impactCarbon(mob/living/carbon/hit_carbon, datum/thrownthing/throwingdatum)
+	if(hit_carbon.legcuffed || !hit_carbon.get_num_legs(FALSE) >= 2)
+		return
+	visible_message(span_danger("\The [src] ensnares [hit_carbon]!"))
+	hit_carbon.legcuffed = src
+	forceMove(hit_carbon)
+	hit_carbon.update_inv_legcuffed()
+	SSblackbox.record_feedback("tally", "handcuffs", 1, type)
+	to_chat(hit_carbon, span_userdanger("\The [src] ensnares you!"))
+	hit_carbon.Immobilize(immobilize)
+	playsound(src, 'sound/effects/snap.ogg', 50, TRUE)
+
+/obj/item/restraints/legcuffs/bola/proc/impactAnimal(mob/living/simple_animal/hit_animal, datum/thrownthing/throwingdatum)
+	return // Does nothing by default
 
 /obj/item/restraints/legcuffs/bola/tactical//traitor variant
 	name = "reinforced bola"
 	desc = "A strong bola, made with a long steel chain. It looks heavy, enough so that it could trip somebody."
 	icon_state = "bola_r"
+	item_state = "bola_r"
 	breakouttime = 70
 	immobilize = 20
 	break_strength = 4
+
+/obj/item/restraints/legcuffs/bola/watcher //tribal bola for tribal lizards
+	name = "watcher Bola"
+	desc = "A Bola made from the stretchy sinew of fallen watchers."
+	icon_state = "bola_watcher"
+	icon_state_preview = "bola_watcher_preview"
+	item_state = "bola_watcher"
+	breakouttime = 45
 
 /obj/item/restraints/legcuffs/bola/energy //For Security
 	name = "energy bola"
 	desc = "A specialized hard-light bola designed to ensnare fleeing criminals and aid in arrests."
 	icon_state = "ebola"
+	item_state = "ebola"
 	hitsound = 'sound/weapons/taserhit.ogg'
 	w_class = WEIGHT_CLASS_SMALL
-	breakouttime = 60
+	breakouttime = 6 SECONDS
 	break_strength = 2
 
 /obj/item/restraints/legcuffs/bola/energy/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
@@ -394,15 +430,15 @@
 	name = "gonbola"
 	desc = "Hey, if you have to be hugged in the legs by anything, it might as well be this little guy."
 	icon_state = "gonbola"
+	icon_state_preview = "gonbola_preview"
+	item_state = "bola_r"
 	breakouttime = 300
 	slowdown = 0
 	var/datum/status_effect/gonbolaPacify/effectReference
 
-/obj/item/restraints/legcuffs/bola/gonbola/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
+/obj/item/restraints/legcuffs/bola/gonbola/impactCarbon(mob/living/carbon/hit_carbon, datum/thrownthing/throwingdatum)
 	. = ..()
-	if(iscarbon(hit_atom))
-		var/mob/living/carbon/C = hit_atom
-		effectReference = C.apply_status_effect(STATUS_EFFECT_GONBOLAPACIFY)
+	effectReference = hit_carbon.apply_status_effect(STATUS_EFFECT_GONBOLAPACIFY)
 
 /obj/item/restraints/legcuffs/bola/gonbola/dropped(mob/user)
 	. = ..()

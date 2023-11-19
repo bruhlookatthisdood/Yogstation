@@ -1,8 +1,10 @@
 /obj/item/shield
 	name = "shield"
 	icon = 'icons/obj/shields.dmi'
+	slowdown = 0.2
+	item_flags = SLOWS_WHILE_IN_HAND
 	block_chance = 50
-	armor = list("melee" = 50, "bullet" = 50, "laser" = 50, "energy" = 0, "bomb" = 30, "bio" = 0, "rad" = 0, "fire" = 80, "acid" = 70)
+	armor = list(MELEE = 50, BULLET = 50, LASER = 50, ENERGY = 0, BOMB = 30, BIO = 0, RAD = 0, FIRE = 80, ACID = 70)
 	var/transparent = FALSE	// makes beam projectiles pass through the shield
 
 /obj/item/shield/proc/on_shield_block(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0, attack_type = MELEE_ATTACK)
@@ -25,6 +27,7 @@
 	var/cooldown = 0 //shield bash cooldown. based on world.time
 	transparent = TRUE
 	max_integrity = 75
+	var/obj/item/stack/sheet/mineral/repair_material = /obj/item/stack/sheet/mineral/titanium
 
 /obj/item/shield/hit_reaction(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0, attack_type = MELEE_ATTACK)
 	if(transparent && (hitby.pass_flags & PASSGLASS))
@@ -41,11 +44,11 @@
 			user.visible_message(span_warning("[user] bashes [src] with [W]!"))
 			playsound(user.loc, 'sound/effects/shieldbash.ogg', 50, 1)
 			cooldown = world.time
-	else if(istype(W, /obj/item/stack/sheet/mineral/titanium))
+	else if(istype(W, repair_material))
 		if (obj_integrity >= max_integrity)
 			to_chat(user, span_notice("[src] is already in perfect condition."))
 		else
-			var/obj/item/stack/sheet/mineral/titanium/T = W
+			var/obj/item/stack/sheet/mineral/T = W
 			T.use(1)
 			obj_integrity = max_integrity
 			to_chat(user, span_notice("You repair [src] with [T]."))
@@ -89,11 +92,12 @@
 	transparent = FALSE
 	materials = list(/datum/material/iron=8500)
 	max_integrity = 65
+	repair_material = /obj/item/stack/sheet/mineral/wood
 
 /obj/item/shield/riot/roman/fake
 	desc = "Bears an inscription on the inside: <i>\"Romanes venio domus\"</i>. It appears to be a bit flimsy."
 	block_chance = 0
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
+	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 0, ACID = 0)
 	max_integrity = 30
 
 /obj/item/shield/riot/roman/shatter(mob/living/carbon/human/owner)
@@ -113,6 +117,7 @@
 	transparent = FALSE
 	max_integrity = 55
 	w_class = WEIGHT_CLASS_NORMAL
+	repair_material = /obj/item/stack/sheet/mineral/wood
 
 /obj/item/shield/riot/buckler/shatter(mob/living/carbon/human/owner)
 	playsound(owner, 'sound/effects/bang.ogg', 50)
@@ -130,7 +135,7 @@
 	block_chance = 25
 	max_integrity = 70
 	w_class = WEIGHT_CLASS_BULKY
-	armor = list("melee" = 50, "bullet" = 50, "laser" = 30, "energy" = 20, "bomb" = 30, "bio" = 0, "rad" = 0, "fire" = 80, "acid" = 70)
+	armor = list(MELEE = 50, BULLET = 50, LASER = 30, ENERGY = 20, BOMB = 30, BIO = 0, RAD = 0, FIRE = 80, ACID = 70)
 
 /obj/item/shield/riot/goliath/shatter(mob/living/carbon/human/owner)
 	playsound(owner, 'sound/effects/bang.ogg', 50)
@@ -144,23 +149,23 @@
 	item_state = "flashshield"
 	var/obj/item/assembly/flash/handheld/embedded_flash
 
-/obj/item/shield/riot/flash/Initialize()
+/obj/item/shield/riot/flash/Initialize(mapload)
 	. = ..()
 	embedded_flash = new(src)
 
 /obj/item/shield/riot/flash/attack(mob/living/M, mob/user)
 	. =  embedded_flash.attack(M, user)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/item/shield/riot/flash/attack_self(mob/living/carbon/user)
 	. = embedded_flash.attack_self(user)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/item/shield/riot/flash/hit_reaction(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0, attack_type = MELEE_ATTACK)
 	. = ..()
 	if (. && !embedded_flash.burnt_out)
 		embedded_flash.activate()
-		update_icon()
+		update_appearance(UPDATE_ICON)
 
 
 /obj/item/shield/riot/flash/attackby(obj/item/W, mob/user)
@@ -171,23 +176,24 @@
 			return
 		else
 			to_chat(user, "You begin to replace the bulb.")
-			if(do_after(user, 2 SECONDS, target = user))
+			if(do_after(user, 2 SECONDS, user))
 				if(flash.burnt_out || !flash || QDELETED(flash))
 					return
 				playsound(src, 'sound/items/deconstruct.ogg', 50, TRUE)
 				qdel(embedded_flash)
 				embedded_flash = flash
 				flash.forceMove(src)
-				update_icon()
+				update_appearance(UPDATE_ICON)
 				return
 	..()
 
 /obj/item/shield/riot/flash/emp_act(severity)
 	. = ..()
 	embedded_flash.emp_act(severity)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
-/obj/item/shield/riot/flash/update_icon()
+/obj/item/shield/riot/flash/update_icon_state()
+	. = ..()
 	if(!embedded_flash || embedded_flash.burnt_out)
 		icon_state = "riot"
 		item_state = "riot"
@@ -205,20 +211,21 @@
 	desc = "A shield that reflects almost all energy projectiles, but is useless against physical attacks. It can be retracted, expanded, and stored anywhere."
 	lefthand_file = 'icons/mob/inhands/equipment/shields_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/shields_righthand.dmi'
+	icon_state = "eshield1" // So it can display without initializing
+	base_icon_state = "eshield" // [base_icon_state]1 for expanded, [base_icon_state]0 for contracted
 	w_class = WEIGHT_CLASS_TINY
 	attack_verb = list("shoved", "bashed")
 	throw_range = 5
 	force = 3
 	throwforce = 3
 	throw_speed = 3
-	var/base_icon_state = "eshield" // [base_icon_state]1 for expanded, [base_icon_state]0 for contracted
 	var/on_force = 10
 	var/on_throwforce = 8
 	var/on_throw_speed = 2
 	var/active = 0
 	var/clumsy_check = TRUE
 
-/obj/item/shield/energy/Initialize()
+/obj/item/shield/energy/Initialize(mapload)
 	. = ..()
 	icon_state = "[base_icon_state]0"
 

@@ -59,7 +59,7 @@ GLOBAL_VAR_INIT(time_last_changed_position, 0)
 	if(modify)
 		. += span_notice("Alt-click to eject the ID card.")
 
-/obj/machinery/computer/card/Initialize()
+/obj/machinery/computer/card/Initialize(mapload)
 	. = ..()
 	change_position_cooldown = CONFIG_GET(number/id_console_jobslot_delay)
 
@@ -515,7 +515,7 @@ GLOBAL_VAR_INIT(time_last_changed_position, 0)
 		if ("print")
 			if (!( printing ))
 				printing = 1
-				sleep(50)
+				sleep(5 SECONDS)
 				var/obj/item/paper/P = new /obj/item/paper( loc )
 				var/t1 = "<B>Crew Manifest:</B><BR>"
 				for(var/datum/data/record/t in sortRecord(GLOB.data_core.general))
@@ -573,7 +573,7 @@ GLOBAL_VAR_INIT(time_last_changed_position, 0)
 	icon_screen = "idminor"
 	circuit = /obj/item/circuitboard/computer/card/minor
 
-/obj/machinery/computer/card/minor/Initialize()
+/obj/machinery/computer/card/minor/Initialize(mapload)
 	. = ..()
 	var/obj/item/circuitboard/computer/card/minor/typed_circuit = circuit
 	if(target_dept)

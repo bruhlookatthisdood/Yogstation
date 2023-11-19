@@ -9,7 +9,7 @@
 	tastes = list("leaves" = 1)
 	foodtype = VEGETABLES
 
-/obj/item/reagent_containers/food/snacks/salad/Initialize()
+/obj/item/reagent_containers/food/snacks/salad/Initialize(mapload)
 	. = ..()
 	eatverb = pick("devour","nibble","gnaw","gobble","chomp") //who the fuck gnaws and devours on a salad
 
@@ -99,7 +99,7 @@
 	icon_state = "ricepudding"
 	bonus_reagents = list(/datum/reagent/consumable/nutriment = 4, /datum/reagent/consumable/nutriment/vitamin = 2)
 	tastes = list("rice" = 1, "sweetness" = 1)
-	foodtype = GRAIN | DAIRY
+	foodtype = GRAIN | DAIRY | SUGAR
 
 /obj/item/reagent_containers/food/snacks/salad/ricepork
 	name = "rice and pork"
@@ -111,11 +111,11 @@
 
 /obj/item/reagent_containers/food/snacks/salad/eggbowl
 	name = "egg bowl"
-	desc = "A bowl of rice with a fried egg."
+	desc = "A bowl of rice with a boiled egg."
 	icon_state = "eggbowl"
 	bonus_reagents = list(/datum/reagent/consumable/nutriment = 4, /datum/reagent/consumable/nutriment/vitamin = 4)
 	tastes = list("rice" = 1, "egg" = 1)
-	foodtype = GRAIN | MEAT | EGG // rip NinjaNomnom
+	foodtype = GRAIN | VEGETABLES | EGG // rip NinjaNomnom
 
 /obj/item/reagent_containers/food/snacks/salad/edensalad
 	name = "\improper Salad of Eden"
@@ -134,3 +134,55 @@
 	list_reagents = list(/datum/reagent/consumable/capsaicin = 2, /datum/reagent/consumable/nutriment/vitamin = 3, /datum/reagent/consumable/nutriment = 5)
 	tastes = list("building heat" = 2, "savory meat and vegtables" = 1)
 	foodtype = GRAIN | MEAT | VEGETABLES
+
+/obj/item/reagent_containers/food/snacks/salad/friedrice
+	name = "fried rice"
+	desc = "A bowl of fried rice, and soy sauce. A bit plain."
+	icon_state = "friedrice"
+	trash = /obj/item/reagent_containers/glass/bowl
+	list_reagents = list(/datum/reagent/consumable/sodiumchloride = 1, /datum/reagent/consumable/nutriment = 4, /datum/reagent/consumable/nutriment/vitamin = 1) //it's...salty rice. not a lot going on here. Some vitamins because you tried, at least.
+	tastes = list("rice" = 1, "salt" = 1)
+	foodtype = GRAIN
+
+/obj/item/reagent_containers/food/snacks/salad/friedrice/veggie
+	name = "veggie fried rice"
+	desc = "A bowl of fried rice, and mixed vegetables."
+	icon_state = "friedrice_veg"
+	trash = /obj/item/reagent_containers/glass/bowl
+	list_reagents = list(/datum/reagent/consumable/sodiumchloride = 1, /datum/reagent/consumable/nutriment = 6, /datum/reagent/consumable/nutriment/vitamin = 15) //veggies are good for you!
+	tastes = list("rice" = 4, "salt" = 1, "vegetables" = 4)
+	foodtype = GRAIN | VEGETABLES
+
+/obj/item/reagent_containers/food/snacks/salad/friedrice/meat
+	name = "meat fried rice"
+	desc = "A bowl of fried rice, and meat."
+	icon_state = "friedrice_meat"
+	trash = /obj/item/reagent_containers/glass/bowl
+	list_reagents = list(/datum/reagent/consumable/sodiumchloride = 1, /datum/reagent/consumable/nutriment = 15, /datum/reagent/consumable/nutriment/vitamin = 6)
+	tastes = list("rice" = 4, "salt" = 1, "meat" = 4)
+	foodtype = GRAIN | MEAT
+
+/obj/item/reagent_containers/food/snacks/salad/friedrice/shrimp
+	name = "shrimp fried rice"
+	desc = "You're telling me a shrimp fried this rice?"
+	icon_state = "friedrice_shrimp"
+	trash = /obj/item/reagent_containers/glass/bowl
+	list_reagents = list(/datum/reagent/consumable/sodiumchloride = 1, /datum/reagent/consumable/nutriment = 8, /datum/reagent/consumable/nutriment/vitamin = 13)
+	tastes = list("rice" = 4, "salt" = 1, "shrimp" = 4)
+	foodtype = GRAIN | SEAFOOD
+
+
+/obj/item/reagent_containers/food/snacks/salad/friedrice/shrimp/Initialize(mapload)
+	. = ..()
+	if(prob(10))
+		name = "rice fried shrimp"
+		desc = "You're telling me a rice fried this shrimp?"
+
+/obj/item/reagent_containers/food/snacks/salad/friedrice/supreme
+	name = "supreme fried rice"
+	desc = "The ultimate fried rice, consisting of meat, vegetables, and shrimp all at once!"
+	icon_state = "friedrice_supreme"
+	trash = /obj/item/reagent_containers/glass/bowl
+	list_reagents = list(/datum/reagent/consumable/sodiumchloride = 2, /datum/reagent/consumable/nutriment = 20, /datum/reagent/consumable/nutriment/vitamin = 20)
+	tastes = list("rice" = 4, "salt" = 1, "meat" = 2, "vegetables" = 2, "shrimp" = 2)
+	foodtype = GRAIN | SEAFOOD | MEAT | VEGETABLES

@@ -198,7 +198,7 @@
 
 /datum/action/innate/end_holocall
 	name = "End Holocall"
-	icon_icon = 'icons/mob/actions/actions_silicon.dmi'
+	button_icon = 'icons/mob/actions/actions_silicon.dmi'
 	button_icon_state = "camera_off"
 	var/datum/holocall/hcall
 
@@ -227,7 +227,7 @@
 	name = "holorecord disk"
 	desc = "Stores recorder holocalls."
 	icon_state = "holodisk"
-	obj_flags = UNIQUE_RENAME
+	obj_flags = UNIQUE_RENAME | UNIQUE_REDESC
 	var/datum/holorecord/record
 	//Preset variables
 	var/preset_image_type
@@ -316,7 +316,6 @@
 		if(outfit_type)
 			mannequin.equipOutfit(outfit_type,TRUE)
 		mannequin.setDir(SOUTH)
-		COMPILE_OVERLAYS(mannequin)
 		. = image(mannequin)
 		unset_busy_human_dummy("HOLODISK_PRESET")
 
@@ -387,7 +386,7 @@
 	nonhuman_mobtype = /obj/machinery/ai/data_core
 
 /datum/preset_holoimage/ai/upgradeboard
-	nonhuman_mobtype = /obj/machinery/ai/expansion_card_holder
+	nonhuman_mobtype = /obj/machinery/ai/server_cabinet
 
 /obj/item/disk/holodisk/donutstation/whiteship
 	name = "Blackbox Print-out #DS024"

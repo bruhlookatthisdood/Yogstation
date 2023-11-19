@@ -1,6 +1,6 @@
 /**********************Mining Scanners**********************/
 /obj/item/mining_scanner
-	desc = "A scanner that checks surrounding rock for useful minerals; it can also be used to stop gibtonite detonations."
+	desc = "A scanner that checks surrounding rock for useful minerals; it can also be used to stop gibtonite detonations.\nIt has a speaker that can be toggled with <b>alt+click</b>"
 	name = "manual mining scanner"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "miningmanual"
@@ -12,6 +12,11 @@
 	slot_flags = ITEM_SLOT_BELT
 	var/cooldown = 35
 	var/current_cooldown = 0
+	var/speaker = TRUE // Speaker that plays a sound when pulsed.
+
+/obj/item/mining_scanner/AltClick(mob/user)
+	speaker = !speaker
+	to_chat(user, "<span class='notice'>You toggle [src]'s speaker to [speaker ? "<b>ON</b>" : "<b>OFF</b>"].</span>")
 
 /obj/item/mining_scanner/attack_self(mob/user)
 	if(!user.client)
@@ -19,6 +24,8 @@
 	if(current_cooldown <= world.time)
 		current_cooldown = world.time + cooldown
 		mineral_scan_pulse(get_turf(user))
+		if(speaker)
+			playsound(src, 'sound/effects/ping.ogg', 15)
 
 //Debug item to identify all ore spread quickly
 /obj/item/mining_scanner/admin
@@ -30,7 +37,7 @@
 	qdel(src)
 
 /obj/item/t_scanner/adv_mining_scanner
-	desc = "A scanner that automatically checks surrounding rock for useful minerals; it can also be used to stop gibtonite detonations. This one has an extended range."
+	desc = "A scanner that automatically checks surrounding rock for useful minerals; it can also be used to stop gibtonite detonations. This one has an extended range.\nIt has a speaker that can be toggled with <b>alt+click</b>"
 	name = "advanced automatic mining scanner"
 	icon_state = "adv_mining0"
 	item_state = "analyzer"
@@ -42,8 +49,13 @@
 	var/cooldown = 35
 	var/current_cooldown = 0
 	var/range = 7
+	var/speaker = TRUE // Speaker that plays a sound when pulsed.
 
-/obj/item/t_scanner/adv_mining_scanner/cyborg/Initialize()
+/obj/item/t_scanner/adv_mining_scanner/AltClick(mob/user)
+	speaker = !speaker
+	to_chat(user, "<span class='notice'>You toggle [src]'s speaker to [speaker ? "<b>ON</b>" : "<b>OFF</b>"].</span>")
+
+/obj/item/t_scanner/adv_mining_scanner/cyborg/Initialize(mapload)
 	. = ..()
 	toggle_on()
 
@@ -54,11 +66,19 @@
 	range = 4
 	cooldown = 50
 
+/obj/item/t_scanner/adv_mining_scanner/goat_scanner
+	desc = "An advanced scanner used by the goat king to sate his appetite for explosions; It allows the user to always receive high potency gibtonite after defusing them."
+	name = "goat king's scanner"
+	icon_state = "goat_mining0"
+	cooldown = 20
+
 /obj/item/t_scanner/adv_mining_scanner/scan()
 	if(current_cooldown <= world.time)
 		current_cooldown = world.time + cooldown
 		var/turf/t = get_turf(src)
 		mineral_scan_pulse(t, range)
+		if(speaker)
+			playsound(src, 'sound/effects/ping.ogg', 15)
 
 /proc/mineral_scan_pulse(turf/T, range = world.view)
 	var/list/minerals = list()
@@ -78,10 +98,11 @@
 	layer = FLASH_LAYER
 	icon = 'icons/effects/ore_visuals.dmi'
 	appearance_flags = 0 //to avoid having TILE_BOUND in the flags, so that the 480x480 icon states let you see it no matter where you are
-	duration = 35
+	duration = 3.5 SECONDS
 	pixel_x = -224
 	pixel_y = -224
 
-/obj/effect/temp_visual/mining_overlay/Initialize()
+/obj/effect/temp_visual/mining_overlay/Initialize(mapload)
 	. = ..()
 	animate(src, alpha = 0, time = duration, easing = EASE_IN)
+

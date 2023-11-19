@@ -12,8 +12,8 @@
 	flags_inv = HIDEGLOVES|HIDESHOES
 	flags_prot = HIDEJUMPSUIT
 	hoodtype = /obj/item/clothing/head/hooded/explorer
-	armor = list("melee" = 30, "bullet" = 20, "laser" = 20, "energy" = 20, "bomb" = 50, "bio" = 100, "rad" = 50, "fire" = 50, "acid" = 50, "wound" = 10)
-	allowed = list(/obj/item/flashlight, /obj/item/tank/internals, /obj/item/resonator, /obj/item/mining_scanner, /obj/item/t_scanner/adv_mining_scanner, /obj/item/gun/energy/kinetic_accelerator, /obj/item/pickaxe)
+	armor = list(MELEE = 25, BULLET = 5, LASER = 5, ENERGY = 5, BOMB = 50, BIO = 100, RAD = 50, FIRE = 50, ACID = 50, WOUND = 10)
+	allowed = list(/obj/item/flashlight, /obj/item/tank/internals, /obj/item/resonator, /obj/item/mining_scanner, /obj/item/t_scanner/adv_mining_scanner, /obj/item/gun/energy/kinetic_accelerator, /obj/item/pickaxe, /obj/item/organ/regenerative_core/legion, /obj/item/kitchen/knife/combat)
 	resistance_flags = FIRE_PROOF
 	mutantrace_variation = MUTANTRACE_VARIATION
 
@@ -22,11 +22,11 @@
 	desc = "An armoured hood for exploring harsh environments."
 	icon_state = "explorer"
 	body_parts_covered = HEAD
-	flags_inv = HIDEHAIR|HIDEFACE|HIDEEARS
-	flags_prot = HIDEHAIR|HIDEFACE
+	flags_inv = HIDEHAIR|HIDEEARS // hoods don't hide your face, silly
+	flags_prot = HIDEHAIR
 	min_cold_protection_temperature = FIRE_HELM_MIN_TEMP_PROTECT
 	max_heat_protection_temperature = FIRE_HELM_MAX_TEMP_PROTECT
-	armor = list("melee" = 30, "bullet" = 20, "laser" = 20, "energy" = 20, "bomb" = 50, "bio" = 100, "rad" = 50, "fire" = 50, "acid" = 50, "wound" = 10)
+	armor = list(MELEE = 25, BULLET = 5, LASER = 5, ENERGY = 5, BOMB = 50, BIO = 100, RAD = 50, FIRE = 50, ACID = 50, WOUND = 10)
 	resistance_flags = FIRE_PROOF
 	var/adjusted = NORMAL_STYLE
 
@@ -38,21 +38,21 @@
 		if(NORMAL_STYLE)
 			adjusted = ALT_STYLE
 			to_chat(usr, span_notice("You adjust the hood to wear it more casually."))
-			flags_inv &= ~(HIDEHAIR|HIDEFACE)
+			flags_inv &= ~HIDEHAIR
 		if(ALT_STYLE)
 			adjusted = NORMAL_STYLE
 			to_chat(usr, span_notice("You adjust the hood back to normal."))
-			flags_inv |= (HIDEHAIR|HIDEFACE)
+			flags_inv |= HIDEHAIR
 	if(ishuman(usr))
 		var/mob/living/carbon/human/H = usr
 		H.update_hair()
 		H.update_body()
 
-/obj/item/clothing/suit/hooded/explorer/Initialize()
+/obj/item/clothing/suit/hooded/explorer/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/armor_plate)
 
-/obj/item/clothing/head/hooded/explorer/Initialize()
+/obj/item/clothing/head/hooded/explorer/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/armor_plate)
 
@@ -63,8 +63,10 @@
 	visor_flags = BLOCK_GAS_SMOKE_EFFECT | MASKINTERNALS
 	visor_flags_inv = HIDEFACIALHAIR
 	visor_flags_cover = MASKCOVERSMOUTH
+	mutantrace_adjusted = MUTANTRACE_VARIATION 
+	mutantrace_variation = MUTANTRACE_VARIATION
 	actions_types = list(/datum/action/item_action/adjust)
-	armor = list("melee" = 10, "bullet" = 5, "laser" = 5, "energy" = 5, "bomb" = 0, "bio" = 50, "rad" = 0, "fire" = 20, "acid" = 40, "wound" = 5)
+	armor = list(MELEE = 10, BULLET = 5, LASER = 5, ENERGY = 5, BOMB = 0, BIO = 50, RAD = 0, FIRE = 20, ACID = 40, WOUND = 5)
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/mask/gas/explorer/attack_self(mob/user)
@@ -74,7 +76,7 @@
 	..()
 	w_class = mask_adjusted ? WEIGHT_CLASS_NORMAL : WEIGHT_CLASS_SMALL
 
-/obj/item/clothing/mask/gas/explorer/folded/Initialize()
+/obj/item/clothing/mask/gas/explorer/folded/Initialize(mapload)
 	. = ..()
 	adjustmask()
 
@@ -87,10 +89,10 @@
 	max_heat_protection_temperature = FIRE_IMMUNITY_MAX_TEMP_PROTECT
 	resistance_flags = FIRE_PROOF | LAVA_PROOF
 	slowdown = 0
-	armor = list("melee" = 75, "bullet" = 40, "laser" = 40, "energy" = 40, "bomb" = 50, "bio" = 100, "rad" = 100, "fire" = 100, "acid" = 100)
-	allowed = list(/obj/item/flashlight, /obj/item/tank/internals, /obj/item/resonator, /obj/item/mining_scanner, /obj/item/t_scanner/adv_mining_scanner, /obj/item/gun/energy/kinetic_accelerator, /obj/item/pickaxe)
+	armor = list(MELEE = 75, BULLET = 10, LASER = 10, ENERGY = 10, BOMB = 75, BIO = 100, RAD = 60, FIRE = 100, ACID = 100)
+	allowed = list(/obj/item/flashlight, /obj/item/tank/internals, /obj/item/resonator, /obj/item/mining_scanner, /obj/item/t_scanner/adv_mining_scanner, /obj/item/gun/energy/kinetic_accelerator, /obj/item/pickaxe, /obj/item/organ/regenerative_core/legion, /obj/item/kitchen/knife/combat)
 
-/obj/item/clothing/suit/space/hostile_environment/Initialize()
+/obj/item/clothing/suit/space/hostile_environment/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/spraycan_paintable)
 	START_PROCESSING(SSobj, src)
@@ -99,10 +101,10 @@
 	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/item/clothing/suit/space/hostile_environment/process()
+/obj/item/clothing/suit/space/hostile_environment/process(delta_time)
 	var/mob/living/carbon/C = loc
-	if(istype(C) && prob(2)) //cursed by bubblegum
-		if(prob(15))
+	if(istype(C) && DT_PROB(1, delta_time)) //cursed by bubblegum
+		if(DT_PROB(7.5, delta_time))
 			new /datum/hallucination/oh_yeah(C)
 			to_chat(C, span_colossus("<b>[pick("I AM IMMORTAL.","I SHALL TAKE BACK WHAT'S MINE.","I SEE YOU.","YOU CANNOT ESCAPE ME FOREVER.","DEATH CANNOT HOLD ME.")]</b>"))
 		else
@@ -116,24 +118,23 @@
 	w_class = WEIGHT_CLASS_NORMAL
 	max_heat_protection_temperature = FIRE_IMMUNITY_MAX_TEMP_PROTECT
 	clothing_flags = STOPSPRESSUREDAMAGE | THICKMATERIAL
-	armor = list("melee" = 75, "bullet" = 40, "laser" = 40, "energy" = 40, "bomb" = 50, "bio" = 100, "rad" = 100, "fire" = 100, "acid" = 100)
+	armor = list(MELEE = 75, BULLET = 10, LASER = 10, ENERGY =10, BOMB = 75, BIO = 100, RAD = 60, FIRE = 100, ACID = 100)
 	resistance_flags = FIRE_PROOF | LAVA_PROOF
 
-/obj/item/clothing/head/helmet/space/hostile_environment/Initialize()
+/obj/item/clothing/head/helmet/space/hostile_environment/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/spraycan_paintable)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
-/obj/item/clothing/head/helmet/space/hostile_environment/update_icon()
-	..()
-	cut_overlays()
+/obj/item/clothing/head/helmet/space/hostile_environment/update_overlays()
+	. = ..()
 	var/mutable_appearance/glass_overlay = mutable_appearance(icon, "hostile_env_glass")
 	glass_overlay.appearance_flags = RESET_COLOR
-	add_overlay(glass_overlay)
+	. += glass_overlay
 
 /obj/item/clothing/head/helmet/space/hostile_environment/worn_overlays(isinhands)
 	. = ..()
 	if(!isinhands)
-		var/mutable_appearance/M = mutable_appearance('icons/mob/head.dmi', "hostile_env_glass")
+		var/mutable_appearance/M = mutable_appearance(mob_overlay_icon, "hostile_env_glass")
 		M.appearance_flags = RESET_COLOR
 		. += M

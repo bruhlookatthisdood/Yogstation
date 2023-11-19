@@ -3,7 +3,6 @@
 	name = "massive gear"
 	icon_state = "wall_gear"
 	unanchored_icon = "wall_gear"
-	climbable = TRUE
 	max_integrity = 100
 	construction_value = 3
 	desc = "A massive brass gear. You could probably secure or unsecure it with a wrench, or just climb over it."
@@ -12,10 +11,14 @@
 	/obj/item/clockwork/alloy_shards/medium = 4, \
 	/obj/item/clockwork/alloy_shards/small = 2) //slightly more debris than the default, totals 26 alloy
 
+/obj/structure/destructible/clockwork/wall_gear/Initialize(mapload)
+	. = ..()
+	AddElement(/datum/element/climbable)
+
 /obj/structure/destructible/clockwork/wall_gear/displaced
 	anchored = FALSE
 
-/obj/structure/destructible/clockwork/wall_gear/Initialize()
+/obj/structure/destructible/clockwork/wall_gear/Initialize(mapload)
 	. = ..()
 	new /obj/effect/temp_visual/ratvar/gear(get_turf(src))
 
@@ -51,7 +54,7 @@
 			to_chat(user, span_warning("There is already a false wall present!"))
 			return
 		to_chat(user, span_notice("You start adding [W] to [src]..."))
-		if(do_after(user, 2 SECONDS, target = src))
+		if(do_after(user, 2 SECONDS, src))
 			var/brass_floor = FALSE
 			if(istype(T, /turf/open/floor/clockwork)) //if the floor is already brass, costs less to make(conservation of masssssss)
 				brass_floor = TRUE

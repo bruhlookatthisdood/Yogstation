@@ -53,7 +53,7 @@ Slimecrossing Potions
 		M.visible_message(span_danger("[user] starts to drink the pacification potion!"),
 			span_danger("You start to drink the pacification potion!"))
 
-	if(!do_after(user, 10 SECONDS, target = M))
+	if(!do_after(user, 10 SECONDS, M))
 		return
 	if(M != user)
 		to_chat(user, span_notice("You feed [M] the pacification potion!"))
@@ -81,7 +81,7 @@ Slimecrossing Potions
 		to_chat(user, span_warning("The slime empathy potion does not work on beings of pure evil!"))
 		return ..()
 	M.visible_message(span_danger("[user] starts to feed [M] a slime empathy potion!"))
-	if(!do_after(user, 5 SECONDS, target = M))
+	if(!do_after(user, 5 SECONDS, M))
 		return
 	to_chat(user, span_notice("You feed [M] the slime empathy potion!"))
 	to_chat(M, span_notice("You feel like you can understand slimes better!."))
@@ -176,7 +176,7 @@ Slimecrossing Potions
 	if(M.maxHealth <= 0)
 		to_chat(user, span_warning("The slime is too unstable to return!"))
 	M.revive(full_heal = 1)
-	M.stat = CONSCIOUS
+	M.set_stat(CONSCIOUS)
 	M.visible_message(span_notice("[M] is filled with renewed vigor and blinks awake!"))
 	M.maxHealth -= 10 //Revival isn't healthy.
 	M.health -= 10

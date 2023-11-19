@@ -149,17 +149,17 @@
 			scrub(tile)
 	return TRUE
 
-/obj/machinery/atmospherics/components/unary/vent_scrubber/proc/scrub(var/turf/tile)
+/obj/machinery/atmospherics/components/unary/vent_scrubber/proc/scrub(turf/tile)
 	if(!istype(tile))
 		return FALSE
 	var/datum/gas_mixture/environment = tile.return_air()
 	var/datum/gas_mixture/air_contents = airs[1]
 
-	if(air_contents.return_pressure() >= 50*ONE_ATMOSPHERE)
+	if(air_contents.return_pressure() >= 50 * ONE_ATMOSPHERE)
 		return FALSE
 
 	if(scrubbing & SCRUBBING)
-		var/transfer_moles = min(1, volume_rate/environment.return_volume())*environment.total_moles()
+		var/transfer_moles = min(1, volume_rate / environment.return_volume()) * environment.total_moles()
 
 		//Take a gas sample
 		var/datum/gas_mixture/removed = tile.remove_air(transfer_moles)
@@ -176,7 +176,7 @@
 
 	else //Just siphoning all air
 
-		var/transfer_moles = environment.total_moles()*(volume_rate/environment.return_volume())
+		var/transfer_moles = environment.total_moles() * (volume_rate / environment.return_volume())
 
 		var/datum/gas_mixture/removed = tile.remove_air(transfer_moles)
 
@@ -243,7 +243,7 @@
 		return //do not update_icon
 
 	broadcast_status()
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	return
 
 /obj/machinery/atmospherics/components/unary/vent_scrubber/power_change()
@@ -261,7 +261,7 @@
 		else
 			user.visible_message("[user] unwelds the scrubber.", "You unweld the scrubber.", "You hear welding.")
 			welded = FALSE
-		update_icon()
+		update_appearance(UPDATE_ICON)
 		pipe_vision_img = image(src, loc, layer = ABOVE_HUD_LAYER, dir = dir)
 		pipe_vision_img.plane = ABOVE_HUD_PLANE
 		investigate_log("was [welded ? "welded shut" : "unwelded"] by [key_name(user)]", INVESTIGATE_ATMOS)
@@ -283,11 +283,11 @@
 	return !welded
 
 /obj/machinery/atmospherics/components/unary/vent_scrubber/attack_alien(mob/user)
-	if(!welded || !(do_after(user, 2 SECONDS, target = src)))
+	if(!welded || !(do_after(user, 2 SECONDS, src)))
 		return
 	user.visible_message("[user] furiously claws at [src]!", "You manage to clear away the stuff blocking the scrubber.", "You hear loud scraping noises.")
 	welded = FALSE
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	pipe_vision_img = image(src, loc, layer = ABOVE_HUD_LAYER, dir = dir)
 	pipe_vision_img.plane = ABOVE_HUD_PLANE
 	playsound(loc, 'sound/weapons/bladeslice.ogg', 100, 1)

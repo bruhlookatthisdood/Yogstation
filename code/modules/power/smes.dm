@@ -2,15 +2,10 @@
 // stores power
 
 //Cache defines
-#define SMES_CLEVEL_1		1
-#define SMES_CLEVEL_2		2
-#define SMES_CLEVEL_3		3
-#define SMES_CLEVEL_4		4
-#define SMES_CLEVEL_5		5
-#define SMES_OUTPUTTING		6
-#define SMES_NOT_OUTPUTTING 7
-#define SMES_INPUTTING		8
-#define SMES_INPUT_ATTEMPT	9
+#define SMES_OUTPUTTING		7
+#define SMES_NOT_OUTPUTTING 8
+#define SMES_INPUTTING		9
+#define SMES_INPUT_ATTEMPT	10
 
 /obj/machinery/power/smes
 	name = "power storage unit"
@@ -52,7 +47,7 @@
 	if(!terminal)
 		. += span_warning("This SMES has no power terminal!")
 
-/obj/machinery/power/smes/Initialize()
+/obj/machinery/power/smes/Initialize(mapload)
 	. = ..()
 	dir_loop:
 		for(var/d in GLOB.cardinals)
@@ -66,7 +61,7 @@
 		obj_break()
 		return
 	terminal.master = src
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/machinery/power/smes/RefreshParts()
 	var/IO = 0
@@ -86,7 +81,7 @@
 /obj/machinery/power/smes/attackby(obj/item/I, mob/user, params)
 	//opening using screwdriver
 	if(default_deconstruction_screwdriver(user, "[initial(icon_state)]-o", initial(icon_state), I))
-		update_icon()
+		update_appearance(UPDATE_ICON)
 		return
 
 	//changing direction using wrench
@@ -103,7 +98,7 @@
 			to_chat(user, span_alert("No power terminal found."))
 			return
 		stat &= ~BROKEN
-		update_icon()
+		update_appearance(UPDATE_ICON)
 		return
 
 	//building and linking a terminal
@@ -134,7 +129,7 @@
 		to_chat(user, span_notice("You start building the power terminal..."))
 		playsound(src.loc, 'sound/items/deconstruct.ogg', 50, 1)
 
-		if(do_after(user, 2 SECONDS, target = src))
+		if(do_after(user, 2 SECONDS, src))
 			if(C.get_amount() < 10 || !C)
 				return
 			var/obj/structure/cable/N = T.get_cable_node() //get the connecting node cable, if there's one
@@ -210,32 +205,30 @@
 		obj_break()
 
 
-/obj/machinery/power/smes/update_icon()
-	cut_overlays()
+/obj/machinery/power/smes/update_overlays()
+	. = ..()
 	if(stat & BROKEN)
 		return
-
 	if(panel_open)
 		return
 
 	if(outputting)
-		add_overlay("smes-op1")
+		. += "smes-out1"
 	else
-		add_overlay("smes-op0")
+		. += "smes-out0"
 
 	if(inputting)
-		add_overlay("smes-oc1")
-	else
-		if(input_attempt)
-			add_overlay("smes-oc0")
+		. += "smes-inp1"
+	else if(input_attempt)
+		. += "smes-inp0"
 
 	var/clevel = chargedisplay()
-	if(clevel>0)
-		add_overlay("smes-og[clevel]")
+	if(clevel > 0)
+		. += "smes-og[clevel]"
 
 
 /obj/machinery/power/smes/proc/chargedisplay()
-	return clamp(round(5.5*charge/capacity),0,5)
+	return clamp(round(6.5*charge/capacity),0,6)
 
 /obj/machinery/power/smes/process()
 	if(stat & BROKEN)
@@ -291,7 +284,7 @@
 
 	// only update icon if state changed
 	if(last_disp != chargedisplay() || last_chrg != inputting || last_onln != outputting)
-		update_icon()
+		update_appearance(UPDATE_ICON)
 
 
 
@@ -321,7 +314,7 @@
 	output_used -= excess
 
 	if(clev != chargedisplay() ) //if needed updates the icons overlay
-		update_icon()
+		update_appearance(UPDATE_ICON)
 	return
 
 
@@ -358,12 +351,12 @@
 		if("tryinput")
 			input_attempt = !input_attempt
 			log_smes(usr)
-			update_icon()
+			update_appearance(UPDATE_ICON)
 			. = TRUE
 		if("tryoutput")
 			output_attempt = !output_attempt
 			log_smes(usr)
-			update_icon()
+			update_appearance(UPDATE_ICON)
 			. = TRUE
 		if("input")
 			var/target = params["target"]
@@ -425,7 +418,7 @@
 	output_level = rand(0, output_level_max)
 	input_level = rand(0, input_level_max)
 	charge = max(charge - 1e6/severity, 0)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	log_smes()
 
 /obj/machinery/power/smes/engineering
@@ -451,14 +444,8 @@
 		return
 	output_attempt = !output_attempt
 	log_smes(user)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
-
-#undef SMES_CLEVEL_1
-#undef SMES_CLEVEL_2
-#undef SMES_CLEVEL_3
-#undef SMES_CLEVEL_4
-#undef SMES_CLEVEL_5
 #undef SMES_OUTPUTTING
 #undef SMES_NOT_OUTPUTTING
 #undef SMES_INPUTTING

@@ -7,7 +7,7 @@
 	anchored = TRUE
 	flags_1 = CONDUCT_1 | RAD_PROTECT_CONTENTS_1 | RAD_NO_CONTAMINATE_1
 	pressure_resistance = 5*ONE_ATMOSPHERE
-	armor = list("melee" = 50, "bullet" = 70, "laser" = 70, "energy" = 100, "bomb" = 10, "bio" = 100, "rad" = 100, "fire" = 0, "acid" = 0)
+	armor = list(MELEE = 50, BULLET = 70, LASER = 70, ENERGY = 100, BOMB = 10, BIO = 100, RAD = 100, FIRE = 80, ACID = 0)
 	max_integrity = 50
 	integrity_failure = 20
 	appearance_flags = KEEP_TOGETHER
@@ -24,7 +24,7 @@
 		pipe_astar_cost = 1\
 	)
 
-/obj/structure/grille/take_damage(damage_amount, damage_type = BRUTE, damage_flag = 0, sound_effect = 1, attack_dir)
+/obj/structure/grille/take_damage(damage_amount, damage_type = BRUTE, damage_flag = 0, sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	. = ..()
 	var/ratio = obj_integrity / max_integrity
 	ratio = CEILING(ratio*4, 1) * 25
@@ -34,14 +34,15 @@
 
 	if(broken)
 		holes = (holes | 16) //16 is the biggest hole
-		update_icon()
+		update_appearance(UPDATE_ICON)
 		return
 
 	holes = (holes | (1 << rand(0,3))) //add random holes between 1 and 8
 
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
-/obj/structure/grille/update_icon()
+/obj/structure/grille/update_icon(updates=ALL)
+	. = ..()
 	if(QDELETED(src))
 		return
 	for(var/i = 0; i < 5; i++)
@@ -66,7 +67,7 @@
 			return list("mode" = RCD_WINDOWGRILLE, "delay" = 20, "cost" = 8)
 	return FALSE
 
-/obj/structure/grille/rcd_act(mob/user, var/obj/item/construction/rcd/the_rcd, passed_mode)
+/obj/structure/grille/rcd_act(mob/user, obj/item/construction/rcd/the_rcd, passed_mode)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct the grille."))
@@ -101,7 +102,7 @@
 /obj/structure/grille/attack_animal(mob/user)
 	. = ..()
 	if(!shock(user, 70))
-		take_damage(rand(5,10), BRUTE, "melee", 1)
+		take_damage(rand(5,10), BRUTE, MELEE, 1)
 
 /obj/structure/grille/attack_paw(mob/user)
 	return attack_hand(user)
@@ -124,20 +125,20 @@
 	user.visible_message(span_warning("[user] hits [src]."), null, null, COMBAT_MESSAGE_RANGE)
 	log_combat(user, src, "hit")
 	if(!shock(user, 70))
-		take_damage(rand(5,10), BRUTE, "melee", 1)
+		take_damage(rand(5,10), BRUTE, MELEE, 1)
 
 /obj/structure/grille/attack_alien(mob/living/user)
 	user.do_attack_animation(src)
 	user.changeNext_move(CLICK_CD_MELEE)
 	user.visible_message(span_warning("[user] mangles [src]."), null, null, COMBAT_MESSAGE_RANGE)
 	if(!shock(user, 70))
-		take_damage(20, BRUTE, "melee", 1)
+		take_damage(20, BRUTE, MELEE, 1)
 
 /obj/structure/grille/CanAllowThrough(atom/movable/mover, turf/target)
 	. = ..()
 	if(mover.pass_flags & PASSGRILLE)
 		return TRUE
-	else if(!. && istype(mover, /obj/item/projectile))
+	else if(!. && istype(mover, /obj/projectile))
 		return prob(30)
 
 /obj/structure/grille/CanAStarPass(ID, dir, caller)
@@ -187,7 +188,7 @@
 				to_chat(user, span_warning("There is already a window there!"))
 				return
 			to_chat(user, span_notice("You start placing the window..."))
-			if(do_after(user, 2 SECONDS, target = src))
+			if(do_after(user, 2 SECONDS, src))
 				if(!src.loc || !anchored) //Grille broken or unanchored while waiting
 					return
 				for(var/obj/structure/window/WINDOW in loc) //Another window already installed on grille
@@ -300,10 +301,10 @@
 	grille_type = /obj/structure/grille
 	broken_type = null
 
-/obj/structure/grille/broken/Initialize()
+/obj/structure/grille/broken/Initialize(mapload)
 	. = ..()
 	holes = (holes | 16)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 /obj/structure/grille/ratvar
 	icon = 'icons/obj/structures.dmi'
@@ -313,7 +314,7 @@
 	broken_type = /obj/structure/grille/ratvar/broken
 	smooth = SMOOTH_FALSE
 
-/obj/structure/grille/ratvar/Initialize()
+/obj/structure/grille/ratvar/Initialize(mapload)
 	. = ..()
 	if(broken)
 		new /obj/effect/temp_visual/ratvar/grille/broken(get_turf(src))
@@ -326,8 +327,8 @@
 	if(src)
 		var/previouscolor = color
 		color = "#960000"
-		animate(src, color = previouscolor, time = 8)
-		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 8)
+		animate(src, color = previouscolor, time = 0.8 SECONDS)
+		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 0.8 SECONDS)
 
 /obj/structure/grille/ratvar/ratvar_act()
 	return

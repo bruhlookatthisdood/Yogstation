@@ -1,5 +1,5 @@
 GLOBAL_LIST_EMPTY(allfaxes)
-GLOBAL_LIST_INIT(admin_departments, list("Central Command"))
+GLOBAL_LIST_EMPTY(admin_departments)
 GLOBAL_LIST_EMPTY(alldepartments)
 GLOBAL_LIST_EMPTY(adminfaxes)
 
@@ -18,12 +18,16 @@ GLOBAL_LIST_EMPTY(adminfaxes)
 	var/department = "Unknown" // our department
 	var/destination = "Central Command" // the department we're sending to
 
-/obj/machinery/photocopier/faxmachine/Initialize()
+/obj/machinery/photocopier/faxmachine/Initialize(mapload)
 	. = ..()
 	GLOB.allfaxes += src
-
 	if( !((department in GLOB.alldepartments) || (department in GLOB.admin_departments)) )
 		GLOB.alldepartments |= department
+
+/obj/machinery/photocopier/faxmachine/Initialize(mapload)
+	. = ..()
+	GLOB.admin_departments |= list("Central Command")
+	//please dont add to this
 
 /obj/machinery/photocopier/faxmachine/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -54,11 +58,12 @@ GLOBAL_LIST_EMPTY(adminfaxes)
 			if(!copier_empty())
 				if(sendcooldown - world.time > 0)
 					to_chat(usr, "<span class='warning'>Transmitter recharging</span>")
-					return
+					return	
+				sendcooldown = world.time + 1 MINUTES
 				if (destination in GLOB.admin_departments)
-					INVOKE_ASYNC(src, .proc/send_admin_fax, usr, destination)
+					INVOKE_ASYNC(src, PROC_REF(send_admin_fax), usr, destination)
 				else
-					INVOKE_ASYNC(src, .proc/sendfax, destination)
+					INVOKE_ASYNC(src, PROC_REF(sendfax), destination)
 			return
 		if("remove")
 			if(copy)
@@ -91,32 +96,26 @@ GLOBAL_LIST_EMPTY(adminfaxes)
 				authenticated = TRUE
 				auth_name = "[id_card.registered_name] - [id_card.assignment]"
 			return
-
 		if("logout")
 			authenticated = FALSE
 			auth_name = null
 			return
-
 	return FALSE
 
-/obj/machinery/photocopier/faxmachine/proc/sendfax(var/destination)
+/obj/machinery/photocopier/faxmachine/proc/sendfax(destination)
 	if(stat & (BROKEN|NOPOWER))
 		return
-	
 	use_power(200)
-	
 	var/success = FALSE
 	for(var/obj/machinery/photocopier/faxmachine/F in GLOB.allfaxes)
 		if( F.department == destination )
 			success ||= F.recievefax(copy || photocopy)
-	
 	if (success)
 		visible_message("[src] beeps, \"Message transmitted successfully.\"")
-		sendcooldown = world.time + 1 MINUTES
 	else
 		visible_message("[src] beeps, \"Error transmitting message.\"")
 
-/obj/machinery/photocopier/faxmachine/proc/recievefax(var/obj/item/incoming)
+/obj/machinery/photocopier/faxmachine/proc/recievefax(obj/item/incoming)
 	if(stat & (BROKEN|NOPOWER))
 		return FALSE
 	
@@ -125,10 +124,8 @@ GLOBAL_LIST_EMPTY(adminfaxes)
 
 	flick("faxreceive", src)
 	playsound(loc, "sound/items/polaroid1.ogg", 50, 1)
-	
 	// give the sprite some time to flick
-	sleep(23)
-	
+	sleep(2.3 SECONDS)
 	if (istype(incoming, /obj/item/paper))
 		copy(incoming)
 	else if (istype(incoming, /obj/item/photo))
@@ -137,14 +134,12 @@ GLOBAL_LIST_EMPTY(adminfaxes)
 		bundlecopy(incoming)
 	else
 		return FALSE
-
 	use_power(active_power_usage)
 	return TRUE
 
-/obj/machinery/photocopier/faxmachine/proc/send_admin_fax(var/mob/sender, var/destination)
+/obj/machinery/photocopier/faxmachine/proc/send_admin_fax(mob/sender, destination)
 	if(stat & (BROKEN|NOPOWER))
 		return
-
 	use_power(200)
 
 	var/obj/item/rcvdcopy
@@ -170,19 +165,66 @@ GLOBAL_LIST_EMPTY(adminfaxes)
 	//message badmins that a fax has arrived
 	switch(destination)
 		if ("Central Command")
+			for(var/client/C in GLOB.permissions.admins) //linked to prayers cause we are running out of legacy toggles
+				if(C.prefs.chat_toggles & CHAT_PRAYER_N_FAX) //if to be moved elsewhere then we must declutter legacy toggles
+					if(C.prefs.toggles & SOUND_PRAYER_N_FAX)//if done then delete these comments
+						SEND_SOUND(sender, sound('sound/effects/admin_fax.ogg'))
 			send_adminmessage(sender, "CENTCOM FAX", rcvdcopy, "CentcomFaxReply", "#006100")
 	sendcooldown = world.time + 1 MINUTES
-	sleep(50)
+	sleep(5 SECONDS)
 	visible_message("[src] beeps, \"Message transmitted successfully.\"")
-	
 
-/obj/machinery/photocopier/faxmachine/proc/send_adminmessage(var/mob/sender, var/faxname, var/obj/item/sent, var/reply_type, font_colour="#006100")
-	var/msg = "<b><font color='[font_colour]'>[faxname]: </font>[key_name(sender, 1)] (<A HREF='?_src_=holder;[HrefToken()];adminplayeropts=\ref[sender]'>PP</A>) (<A HREF='?_src_=vars;[HrefToken()];Vars=\ref[sender]'>VV</A>) (<A HREF='?_src_=holder;[HrefToken()];subtlemessage=\ref[sender]'>SM</A>) (<A HREF='?_src_=holder;[HrefToken()];adminplayerobservefollow=\ref[sender]'>JMP</A>) (<a href='?_src_=holder;[HrefToken()];[reply_type]=\ref[sender];originfax=\ref[src]'>REPLY</a>)</b>: Receiving '[sent.name]' via secure connection ... <a href='?_src_=holder;[HrefToken()];AdminFaxView=\ref[sent]'>view message</a>"
-	msg = span_admin("<span class=\"message linkify\">[msg]</span>")
-	to_chat(GLOB.admins,
+/obj/machinery/photocopier/faxmachine/proc/send_adminmessage(mob/sender, faxname, obj/item/sent, reply_type, font_colour="#006100")
+	var/msg = "<b><font color='[font_colour]'>[faxname]: </font>[key_name(sender, 1)] (<A HREF='?_src_=holder;[HrefToken(TRUE)];adminplayeropts=\ref[sender]'>PP</A>) (<A HREF='?_src_=vars;[HrefToken(TRUE)];Vars=\ref[sender]'>VV</A>) (<A HREF='?_src_=holder;[HrefToken(TRUE)];subtlemessage=\ref[sender]'>SM</A>) (<A HREF='?_src_=holder;[HrefToken(TRUE)];adminplayerobservefollow=\ref[sender]'>JMP</A>) (<a href='?_src_=holder;[HrefToken(TRUE)];[reply_type]=\ref[sender];originfax=\ref[src]'>REPLY</a>)</b>: Receiving '[sent.name]' via secure connection ... <a href='?_src_=holder;[HrefToken(TRUE)];AdminFaxView=\ref[sent]'>view message</a>"
+	msg = span_admin("<span class=\"message\">[msg]</span>")
+	to_chat(GLOB.permissions.admins,
 		type = MESSAGE_TYPE_ADMINLOG,
 		html = msg,
 		confidential = TRUE)
 
 /obj/machinery/photocopier/faxmachine/check_ass()
 	return FALSE // No ass here
+
+/obj/machinery/photocopier/faxmachine/proc/recieve_admin_fax(customname, list/T)
+	if(stat & (BROKEN|NOPOWER))
+		return
+	// animate! it's alive!
+	flick("faxreceive", src)
+
+	// give the sprite some time to flick
+	spawn(20)
+		var/obj/item/paper/P = new /obj/item/paper( loc )
+		P.name = "[command_name()] - [customname]"
+		
+		var/list/templist = list() // All the stuff we're adding to $written
+		for(var/text in T)
+			if(text == PAPER_FIELD)
+				templist += text
+			else
+				var/datum/langtext/L = new(text,/datum/language/common)
+				templist += L
+
+		P.written += templist
+		P.update_appearance(UPDATE_ICON)
+		playsound(loc, "sound/items/polaroid1.ogg", 50, 1)
+
+		// Stamps
+		var/datum/asset/spritesheet/sheet = get_asset_datum(/datum/asset/spritesheet/simple/paper)
+		if (isnull(P.stamps))
+			P.stamps = sheet.css_tag()
+		P.stamps += sheet.icon_tag("stamp-cent")
+		P.stamps += "<br><i>This paper has been verified by the Central Command Quantum Relay.</i><br>"
+		var/mutable_appearance/stampoverlay = mutable_appearance('icons/obj/bureaucracy.dmi', "paper_stamp-cent")
+		stampoverlay.pixel_x = rand(-2, 2)
+		stampoverlay.pixel_y = rand(-3, 2)
+
+		LAZYADD(P.stamped, "stamp-cent")
+		P.add_overlay(stampoverlay)
+
+/obj/machinery/photocopier/faxmachine/AltClick(mob/user)
+	if(IsAdminGhost(user))
+		send_admin_fax(src)		
+
+/obj/machinery/photocopier/faxmachine/examine(mob/user)
+	if(IsAdminGhost(user))
+		.+= span_notice("You can send admin faxes via Alt-Click to this specific fax machine.")

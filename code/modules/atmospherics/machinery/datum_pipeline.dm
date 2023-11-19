@@ -202,9 +202,8 @@
 
 /datum/pipeline/proc/return_air()
 	. = other_airs + air
-	if(null in .)
+	if(listclearnulls(.))
 		stack_trace("[src] has one or more null gas mixtures, which may cause bugs. Null mixtures will not be considered in reconcile_air().")
-		return removeNullsFromList(.)
 
 /datum/pipeline/proc/reconcile_air()
 	var/list/datum/gas_mixture/GL = list()
@@ -232,6 +231,8 @@
 	var/total_volume = 0
 
 	for(var/i in GL)
+		if(!i)
+			continue
 		var/datum/gas_mixture/G = i
 		total_gas_mixture.merge(G)
 		total_volume += G.return_volume()
@@ -239,6 +240,8 @@
 	if(total_volume > 0)
 		//Update individual gas_mixtures by volume ratio
 		for(var/i in GL)
+			if(!i)
+				continue
 			var/datum/gas_mixture/G = i
 			G.copy_from(total_gas_mixture)
 			G.multiply(G.return_volume()/total_volume)

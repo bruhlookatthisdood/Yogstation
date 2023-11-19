@@ -1,5 +1,5 @@
 ///An unreadied player counts for this much compared to a readied one
-#define UNREADIED_PLAYER_MULTIPLIER 0.5
+#define UNREADIED_PLAYER_MULTIPLIER 0.75
 
 #define NUKE_RESULT_FLUKE 0
 #define NUKE_RESULT_NUKE_WIN 1
@@ -32,10 +32,30 @@
 /// blob gets a free reroll every X time
 #define BLOB_REROLL_TIME 2400
 #define BLOB_SPREAD_COST 4
+#define OVERMIND_STARTING_AUTO_PLACE_TIME 6 MINUTES
 /// blob refunds this much if it attacks and doesn't spread
 #define BLOB_ATTACK_REFUND 2
 #define BLOB_REFLECTOR_COST 15
 
+/// Forces the blob to place the core where they currently are, ignoring any checks.
+#define BLOB_FORCE_PLACEMENT -1
+/// Normal blob placement, does the regular checks to make sure the blob isn't placing itself in an invalid location
+#define BLOB_NORMAL_PLACEMENT 0
+/// Selects a random location for the blob to be placed.
+#define BLOB_RANDOM_PLACEMENT 1
+
+
+/// The dimensions of the antagonist preview icon. Will be scaled to this size.
+#define ANTAGONIST_PREVIEW_ICON_SIZE 96
+
+/// How many telecrystals a normal traitor starts with
+#define TELECRYSTALS_DEFAULT 20
+/// How many telecrystals mapper/admin only "precharged" uplink implant
+#define TELECRYSTALS_PRELOADED_IMPLANT 10
+/// The normal cost of an uplink implant; used for calcuating how many
+/// TC to charge someone if they get a free implant through choice or
+/// because they have nothing else that supports an implant.
+#define UPLINK_IMPLANT_TELECRYSTAL_COST 4
 
 //ERT Types
 #define ERT_BLUE "Blue"
@@ -85,6 +105,7 @@
 ///It is faster as a macro than a proc
 #define IS_HERETIC(mob) (mob.mind?.has_antag_datum(/datum/antagonist/heretic))
 #define IS_HERETIC_MONSTER(mob) (mob.mind?.has_antag_datum(/datum/antagonist/heretic_monster))
+#define IS_HERETIC_OR_MONSTER(mob) (IS_HERETIC(mob) || IS_HERETIC_MONSTER(mob))
 #define IS_EXCLUSIVE_KNOWLEDGE(knowledge) (knowledge.tier % 2)
 
 #define PATH_SIDE "Side"
@@ -92,6 +113,10 @@
 #define PATH_ASH "Ash"
 #define PATH_RUST "Rust"
 #define PATH_FLESH "Flesh"
+#define PATH_MIND "Mind"
+#define PATH_VOID "Void"
+#define PATH_BLADE "Blade"
+#define PATH_COSMIC "Cosmic"
 
 #define TIER_NONE 0
 #define TIER_PATH 1
@@ -102,8 +127,40 @@
 #define TIER_3 6
 #define TIER_ASCEND 7
 
-//Bloodsuckers
+///Whether a mob is a Bloodsucker
 #define IS_BLOODSUCKER(mob) (mob?.mind?.has_antag_datum(/datum/antagonist/bloodsucker))
+///Whether a mob is a Vassal
 #define IS_VASSAL(mob) (mob?.mind?.has_antag_datum(/datum/antagonist/vassal))
+///Whether a mob is a Favorite Vassal
+#define IS_FAVORITE_VASSAL(mob) (mob?.mind?.has_antag_datum(/datum/antagonist/vassal/favorite))
+///Whether a mob is a Revenge Vassal
+#define IS_REVENGE_VASSAL(mob) (mob?.mind?.has_antag_datum(/datum/antagonist/vassal/revenge))
+///Whether a mob is a Monster Hunter
 #define IS_MONSTERHUNTER(mob) (mob?.mind?.has_antag_datum(/datum/antagonist/monsterhunter))
+
+/// The Classic Wizard wizard loadout.
+#define WIZARD_LOADOUT_CLASSIC "loadout_classic"
+/// Mjolnir's Power wizard loadout.
+#define WIZARD_LOADOUT_MJOLNIR "loadout_hammer"
+/// Fantastical Army wizard loadout.
+#define WIZARD_LOADOUT_WIZARMY "loadout_army"
+/// Soul Tapper wizard loadout.
+#define WIZARD_LOADOUT_SOULTAP "loadout_tap"
+/// Convenient list of all wizard loadouts for unit testing.
+#define ALL_WIZARD_LOADOUTS list( \
+	WIZARD_LOADOUT_CLASSIC, \
+	WIZARD_LOADOUT_MJOLNIR, \
+	WIZARD_LOADOUT_WIZARMY, \
+	WIZARD_LOADOUT_SOULTAP, \
+)
+
+/// Used in logging spells for roundend results
+#define LOG_SPELL_TYPE "type"
+#define LOG_SPELL_AMOUNT "amount"
+
+//antagonist awaken stages
+#define ANTAG_ASLEEP 0
+#define ANTAG_FIRST_WARNING 1
+#define ANTAG_SECOND_WARNING 2
+#define ANTAG_AWAKE 3
 

@@ -15,14 +15,14 @@
 	var/datum/gas_mixture/bomb_result = new
 	var/list/bomb_explosion_size = null
 
-/obj/machinery/computer/atmos_sim/Initialize()
+/obj/machinery/computer/atmos_sim/Initialize(mapload)
 	tank_mix.set_temperature(T20C)
 	tank_mix.set_volume(CELL_VOLUME)
 	bomb_1.set_temperature(70)
 	bomb_1.set_volume(CELL_VOLUME)
 	bomb_2.set_temperature(70)
 	bomb_2.set_volume(CELL_VOLUME)
-	..()
+	return ..()
 
 /obj/machinery/computer/atmos_sim/proc/simulate_bomb()
 	bomb_explosion_size = null

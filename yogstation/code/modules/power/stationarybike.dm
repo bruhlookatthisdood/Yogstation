@@ -19,19 +19,20 @@
 
 /obj/machinery/power/stationarybike/examine(mob/user)
 	. = ..()
-	. +=span_notice("It is generating [generating]kw of power.")
+	. += span_notice("It is generating [generating]kw of power.")
 
-/obj/machinery/power/stationarybike/emag_act(mob/user)
+/obj/machinery/power/stationarybike/emag_act(mob/user, obj/item/card/emag/emag_card)
 	if(obj_flags & EMAGGED)
-		return
+		return FALSE
 	obj_flags |= EMAGGED
 	lifeweb = 1
-	to_chat(user, span_warning("You disabled safeties"))
+	to_chat(user, span_warning("You disabled the safeties."))
+	return TRUE
 
 /obj/machinery/power/stationarybike/wrench_act(mob/living/user, obj/item/I)
 	if(!anchored && !isinspace())
 		playsound(src.loc, 'sound/items/deconstruct.ogg', 50, 1)
-		if(do_after(user, 2 SECONDS, target = src))
+		if(do_after(user, 2 SECONDS, src))
 			connect_to_network()
 			to_chat(user, span_notice("You secure [src] to the floor."))
 			anchored  = TRUE
@@ -41,7 +42,7 @@
 			to_chat(user, span_warning("You can't detach [src] from the floor while its moving!"))
 			return TRUE
 		playsound(src.loc, 'sound/items/deconstruct.ogg', 50, 1)
-		if(do_after(user, 2 SECONDS, target = src))
+		if(do_after(user, 2 SECONDS, src))
 			disconnect_from_network()
 			to_chat(user, span_notice("You unsecure [src] from the floor."))
 			anchored = FALSE

@@ -22,7 +22,13 @@
 	name = "Bone Axe"
 	description = "Station 12 has had their fire axes stolen by marauding clowns. Ship them a bone axe as a replacement."
 	reward = 7500
-	wanted_types = list(/obj/item/twohanded/fireaxe/boneaxe)
+	wanted_types = list(/obj/item/fireaxe/boneaxe)
+
+/datum/bounty/item/mining/bone_bow
+	name = "Bone Bow"
+	description = "Central Command is holding an archery competition. Ship a special bow for our top athlete."
+	reward = 10000
+	wanted_types = list(/obj/item/gun/ballistic/bow/ashen)
 
 /datum/bounty/item/mining/bone_armor
 	name = "Bone Armor"
@@ -87,4 +93,4 @@
 	description = "We are hosting a tournament in our thunderdome and need some quick acting medicine. Ship some survival medipens over for us."
 	reward = 5200
 	required_count = 3
-	wanted_types = list(/obj/item/reagent_containers/hypospray/medipen/survival)
+	wanted_types = list(/obj/item/reagent_containers/autoinjector/medipen/survival)

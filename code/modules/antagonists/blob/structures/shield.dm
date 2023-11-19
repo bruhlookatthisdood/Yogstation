@@ -9,7 +9,7 @@
 	explosion_block = 3
 	point_return = 4
 	atmosblock = TRUE
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 90, "acid" = 90)
+	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 90, ACID = 90)
 
 /obj/structure/blob/shield/scannerreport()
 	if(atmosblock)
@@ -19,8 +19,8 @@
 /obj/structure/blob/shield/core
 	point_return = 0
 
-/obj/structure/blob/shield/update_icon()
-	..()
+/obj/structure/blob/shield/update_appearance(updates=ALL)
+	. = ..()
 	if(obj_integrity < max_integrity * 0.5)
 		icon_state = "[initial(icon_state)]_damaged"
 		name = "weakened [initial(name)]"
@@ -44,7 +44,7 @@
 	brute_resist = 0.5
 	explosion_block = 2
 
-/obj/structure/blob/shield/reflective/handle_ricochet(obj/item/projectile/P)
+/obj/structure/blob/shield/reflective/handle_ricochet(obj/projectile/P)
 	var/turf/p_turf = get_turf(P)
 	var/face_direction = get_dir(src, p_turf)
 	var/face_angle = dir2angle(face_direction)

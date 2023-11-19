@@ -11,12 +11,13 @@
 
 	var/power_per_hug = 1000000
 
-/obj/machinery/power/hugbox_engine/emag_act(mob/user)
+/obj/machinery/power/hugbox_engine/emag_act(mob/user, obj/item/card/emag/emag_card)
 	if(obj_flags & EMAGGED)
-		return
+		return FALSE
 	obj_flags |= EMAGGED
 	to_chat(user, span_warning("You crank up the love harvesting regulator to hardware maximum."))
-
+	return TRUE
+	
 /obj/machinery/power/hugbox_engine/wrench_act(mob/living/user, obj/item/I)
 	if(!anchored && !isinspace())
 		connect_to_network()
@@ -50,8 +51,8 @@
 		playsound(src, 'sound/machines/honkbot_evil_laugh.ogg', 50, 1)
 		C.notransform = TRUE
 		buckle_mob(C, TRUE, TRUE)
-		C.Stun(30) //So they can't escape by themselves
-		sleep(30) //better beg for help
+		C.Stun(3 SECONDS) //So they can't escape by themselves
+		sleep(3 SECONDS) //better beg for help
 		crunch(C)
 		return
 	to_chat(C, span_notice("You hug [src]."))
@@ -69,18 +70,18 @@
 			shake_camera(crunched, 3, 1)
 			crunched.add_splatter_floor(location)
 			add_avail(power_per_hug*50) //5 MW
-			crunched.Stun(20)
-			sleep(20)
+			crunched.Stun(2 SECONDS)
+			sleep(2 SECONDS)
 		else
 			crunched.visible_message(span_danger("[src] hugs [crunched] tighter!"), span_userdanger("[src] starts hugging you tighter!"))
-			crunched.Stun(30)
+			crunched.Stun(3 SECONDS)
 			crunched.adjustBruteLoss(5)
-			sleep(30)
+			sleep(3 SECONDS)
 			if(crunched.buckled) //Are they still buckled?
 				crunched.visible_message(span_danger("[src] hugs [crunched] tighter!"), span_userdanger("WAY TOO TIGHT."))
-				crunched.Stun(40)
+				crunched.Stun(4 SECONDS)
 				crunched.adjustBruteLoss(5)
-				sleep(40)
+				sleep(4 SECONDS)
 			if(crunched.buckled)
 				crunched.visible_message(span_danger("You hear a loud crunch coming from [crunched]!"), span_colossus("CRUNCH"))
 				crunched.add_splatter_floor(location)
@@ -90,9 +91,9 @@
 				shake_camera(crunched, 3, 1)
 				playsound(src, "sound/magic/demon_consume.ogg", 60, 1)
 				crunched.gain_trauma(/datum/brain_trauma/severe/paralysis/paraplegic, TRAUMA_RESILIENCE_SURGERY)
-				sleep(30)
+				sleep(3 SECONDS)
 			unbuckle_mob(crunched, TRUE)
 
 	crunched.notransform = FALSE
-	crunched.Knockdown(40)
+	crunched.Knockdown(4 SECONDS)
 	crunched.visible_message(span_warning("[src] lets go of [crunched]."), span_warning("[src] lets you go."))

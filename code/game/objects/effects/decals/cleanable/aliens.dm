@@ -9,7 +9,7 @@
 	bloodiness = BLOOD_AMOUNT_PER_DECAL
 	blood_state = BLOOD_STATE_XENO
 
-/obj/effect/decal/cleanable/xenoblood/Initialize()
+/obj/effect/decal/cleanable/xenoblood/Initialize(mapload)
 	. = ..()
 	add_blood_DNA(list("UNKNOWN DNA" = "X*"))
 
@@ -30,7 +30,7 @@
 	var/direction = pick(directions)
 	for(var/i = 0, i < pick(1, 200; 2, 150; 3, 50), i++)
 		if (!mapload)
-			sleep(2)
+			sleep(0.2 SECONDS)
 		if(i > 0)
 			new /obj/effect/decal/cleanable/xenoblood/xsplatter(loc)
 		if(!step_to(src, get_step(src, direction), 0))
@@ -75,6 +75,6 @@
 	icon_state = "xtracks"
 	random_icon_states = null
 
-/obj/effect/decal/cleanable/blood/xtracks/Initialize()
+/obj/effect/decal/cleanable/blood/xtracks/Initialize(mapload)
 	. = ..()
 	add_blood_DNA(list("Unknown DNA" = "X*"))

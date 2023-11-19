@@ -13,8 +13,8 @@
 
 	var/obj/structure/spacevine/SV = new()
 
-	for(var/area/maintenance/A in world)
-		for(var/turf/F in A)
+	for(var/area/maintenance/A in GLOB.areas)
+		for(var/turf/F as anything in A.get_contained_turfs())
 			if(F.Enter(SV))
 				turfs += F
 
@@ -124,7 +124,7 @@
 	return 1
 
 /datum/spacevine_mutation/fire_proof/on_hit(obj/structure/spacevine/holder, mob/hitter, obj/item/I, expected_damage)
-	if(I && I.damtype == "fire")
+	if(I && I.damtype == BURN)
 		. = 0
 	else
 		. = expected_damage
@@ -281,7 +281,7 @@
 	var/datum/spacevine_controller/master = null
 	var/list/mutations = list()
 
-/obj/structure/spacevine/Initialize()
+/obj/structure/spacevine/Initialize(mapload)
 	. = ..()
 	add_atom_colour("#ffffff", FIXED_COLOUR_PRIORITY)
 
@@ -332,7 +332,7 @@
 
 	for(var/datum/spacevine_mutation/SM in mutations)
 		damage_dealt = SM.on_hit(src, user, I, damage_dealt) //on_hit now takes override damage as arg and returns new value for other mutations to permutate further
-	take_damage(damage_dealt, I.damtype, "melee", 1)
+	take_damage(damage_dealt, I.damtype, MELEE, 1)
 
 /obj/structure/spacevine/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
 	switch(damage_type)
@@ -374,7 +374,7 @@
 	var/list/vine_mutations_list
 	var/mutativeness = 1
 
-/datum/spacevine_controller/New(turf/location, list/muts, potency, production, var/datum/round_event/event = null)
+/datum/spacevine_controller/New(turf/location, list/muts, potency, production, datum/round_event/event = null)
 	vines = list()
 	growth_queue = list()
 	var/obj/structure/spacevine/SV = spawn_spacevine_piece(location, null, muts)
@@ -397,7 +397,7 @@
 /datum/spacevine_controller/vv_do_topic(href_list)
 	. = ..()
 	if(href_list[VV_HK_SPACEVINE_PURGE])
-		if(alert(usr, "Are you sure you want to delete this spacevine cluster?", "Delete Vines", "Yes", "No") == "Yes")
+		if(tgui_alert(usr, "Are you sure you want to delete this spacevine cluster?", "Delete Vines", list("Yes", "No")) == "Yes")
 			DeleteVines()
 
 /datum/spacevine_controller/proc/DeleteVines()	//this is kill
@@ -421,8 +421,8 @@
 		var/parentcolor = parent.atom_colours[FIXED_COLOUR_PRIORITY]
 		SV.add_atom_colour(parentcolor, FIXED_COLOUR_PRIORITY)
 		if(prob(mutativeness))
-			var/datum/spacevine_mutation/randmut = pick(vine_mutations_list - SV.mutations)
-			randmut.add_mutation_to_vinepiece(SV)
+			var/datum/spacevine_mutation/random_mutate = pick(vine_mutations_list - SV.mutations)
+			random_mutate.add_mutation_to_vinepiece(SV)
 
 	for(var/datum/spacevine_mutation/SM in SV.mutations)
 		SM.on_birth(SV)
@@ -440,7 +440,7 @@
 		KZ.set_production((spread_cap / initial(spread_cap)) * 5)
 		qdel(src)
 
-/datum/spacevine_controller/process()
+/datum/spacevine_controller/process(delta_time)
 	if(!LAZYLEN(vines))
 		qdel(src) //space vines exterminated. Remove the controller
 		return
@@ -448,9 +448,7 @@
 		qdel(src) //Sanity check
 		return
 
-	var/length = 0
-
-	length = min( spread_cap , max( 1 , vines.len / spread_multiplier ) )
+	var/length = round(clamp(delta_time * 0.5 * vines.len / spread_multiplier, 1, spread_cap))
 	var/i = 0
 	var/list/obj/structure/spacevine/queue_end = list()
 
@@ -463,7 +461,7 @@
 		for(var/datum/spacevine_mutation/SM in SV.mutations)
 			SM.process_mutation(SV)
 		if(SV.energy < 2) //If tile isn't fully grown
-			if(prob(20))
+			if(DT_PROB(10, delta_time))
 				SV.grow()
 		else //If tile is fully grown
 			SV.entangle_mob()
@@ -522,7 +520,7 @@
 						if(!istype(D, /obj/machinery/door/airlock/external))
 							var/obj/machinery/door/airlock/A = D
 							playsound(src, 'sound/machines/airlock_alien_prying.ogg', 100, 1)
-							sleep(60)
+							sleep(6 SECONDS)
 							A.open(2)
 							for(var/datum/spacevine_mutation/SM in mutations)
 								SM.on_spread(src, stepturf)
@@ -530,13 +528,12 @@
 							if(master)
 								master.spawn_spacevine_piece(stepturf, src)
 					else
-						if(!istype(D, /obj/machinery/door/firedoor))
-							D.open()
-							for(var/datum/spacevine_mutation/SM in mutations)
-								SM.on_spread(src, stepturf)
-								stepturf = get_step(src,direction)
-							if(master)
-								master.spawn_spacevine_piece(stepturf, src)
+						D.open()
+						for(var/datum/spacevine_mutation/SM in mutations)
+							SM.on_spread(src, stepturf)
+							stepturf = get_step(src,direction)
+						if(master)
+							master.spawn_spacevine_piece(stepturf, src)
 
 /obj/structure/spacevine/ex_act(severity, target)
 	if(istype(target, type)) //if its agressive spread vine dont do anything

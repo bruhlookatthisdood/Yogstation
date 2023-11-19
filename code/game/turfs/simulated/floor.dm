@@ -25,6 +25,10 @@
 
 	tiled_dirt = TRUE
 
+	//Do we have an uncleanable level of grime? This overlays a color multiplied noise ("grime") image on top for TG style dirtiness with clean icons.
+	var/grime = FALSE
+	var/grime_alpha = 40 //what is the alpha of our grime? brighter tiles look worse with grime.
+
 /turf/open/floor/Initialize(mapload)
 
 	if (!broken_states)
@@ -50,13 +54,20 @@
 					"oldburning","light-on-r","light-on-y","light-on-g","light-on-b", "wood", "carpetsymbol", "carpetstar",
 					"carpetcorner", "carpetside", "carpet", "ironsand1", "ironsand2", "ironsand3", "ironsand4", "ironsand5",
 					"ironsand6", "ironsand7", "ironsand8", "ironsand9", "ironsand10", "ironsand11",
-					"ironsand12", "ironsand13", "ironsand14", "ironsand15")
+					"ironsand12", "ironsand13", "ironsand14", "ironsand15", "bamboo", "bamboosymbol", "bamboostar")
 	if(broken || burnt || (icon_state in icons_to_ignore_at_floor_init)) //so damaged/burned tiles or plating icons aren't saved as the default
 		icon_state_regular_floor = "floor"
 		icon_regular_floor = 'icons/turf/floors.dmi'
 	else
 		icon_state_regular_floor = icon_state
 		icon_regular_floor = icon
+
+	if(grime)
+		//add a bit of grime for noobs
+		var/mutable_appearance/MA = mutable_appearance(icon, "grime", alpha = grime_alpha)
+		MA.blend_mode = BLEND_MULTIPLY
+		add_overlay(MA)
+
 	if(mapload && prob(33))
 		MakeDirty()
 	if(is_station_level(z))
@@ -115,9 +126,9 @@
 /turf/open/floor/blob_act(obj/structure/blob/B)
 	return
 
-/turf/open/floor/proc/update_icon()
+/turf/open/floor/update_icon(updates=ALL)
+	. = ..()
 	update_visuals()
-	return 1
 
 /turf/open/floor/attack_paw(mob/user)
 	return attack_hand(user)
@@ -164,7 +175,7 @@
 	W.icon_regular_floor = old_icon
 	W.icon_state_regular_floor = old_icon_state
 	W.setDir(old_dir)
-	W.update_icon()
+	W.update_appearance(UPDATE_ICON)
 	return W
 
 /turf/open/floor/attackby(obj/item/C, mob/user, params)
@@ -285,7 +296,7 @@
 					new_window.req_one_access = the_rcd.airlock_electronics.one_access
 					new_window.unres_sides = the_rcd.airlock_electronics.unres_sides
 				new_window.autoclose = TRUE
-				new_window.update_icon()
+				new_window.update_appearance(UPDATE_ICON)
 				return TRUE
 			to_chat(user, span_notice("You build an airlock."))
 			var/obj/machinery/door/airlock/new_airlock = new the_rcd.airlock_type(src)
@@ -304,7 +315,7 @@
 			if(new_airlock.electronics.unres_sides)
 				new_airlock.unres_sides = new_airlock.electronics.unres_sides
 			new_airlock.autoclose = TRUE
-			new_airlock.update_icon()
+			new_airlock.update_appearance(UPDATE_ICON)
 
 			return TRUE
 		if(RCD_DECONSTRUCT)

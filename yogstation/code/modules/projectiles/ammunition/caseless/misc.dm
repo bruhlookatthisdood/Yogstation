@@ -1,7 +1,7 @@
-/obj/item/ammo_casing/caseless/kineticspear
+/obj/item/ammo_casing/reusable/kineticspear
 	name = "kinetic spear"
 	desc = "A specialized spear rigged to deliver a weak kinetic blast on contact with fauna."
-	projectile_type = /obj/item/projectile/bullet/reusable/kineticspear
+	projectile_type = /obj/projectile/bullet/reusable/kineticspear
 	caliber = "speargun"
 	icon = 'yogstation/icons/obj/ammo.dmi'
 	icon_state = "kineticspear"
@@ -12,5 +12,5 @@
 
 /obj/item/storage/pod/PopulateContents()
 	. = ..()
-	new /obj/item/ammo_casing/caseless/kineticspear(src)
-	new /obj/item/ammo_casing/caseless/kineticspear(src)
+	new /obj/item/ammo_casing/reusable/kineticspear(src)
+	new /obj/item/ammo_casing/reusable/kineticspear(src)

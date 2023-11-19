@@ -8,8 +8,8 @@
 	offset_x = rand(-max_x, max_x)
 	offset_y = rand(-max_y, max_y)
 
-	RegisterSignal(parent, COMSIG_MOVABLE_CROSSED, .proc/join_swarm)
-	RegisterSignal(parent, COMSIG_MOVABLE_UNCROSSED, .proc/leave_swarm)
+	RegisterSignal(parent, COMSIG_MOVABLE_CROSSED, PROC_REF(join_swarm))
+	RegisterSignal(parent, COMSIG_MOVABLE_UNCROSSED, PROC_REF(leave_swarm))
 
 /datum/component/swarming/proc/join_swarm(datum/source, atom/movable/AM)
 	var/datum/component/swarming/other_swarm = AM.GetComponent(/datum/component/swarming)
@@ -35,10 +35,10 @@
 	var/atom/movable/owner = parent
 	if(!is_swarming)
 		is_swarming = TRUE
-		animate(owner, pixel_x = owner.pixel_x + offset_x, pixel_y = owner.pixel_y + offset_y, time = 2)
+		animate(owner, pixel_x = owner.pixel_x + offset_x, pixel_y = owner.pixel_y + offset_y, time = 0.2 SECONDS)
 
 /datum/component/swarming/proc/unswarm()
 	var/atom/movable/owner = parent
 	if(is_swarming)
-		animate(owner, pixel_x = owner.pixel_x - offset_x, pixel_y = owner.pixel_y - offset_y, time = 2)
+		animate(owner, pixel_x = owner.pixel_x - offset_x, pixel_y = owner.pixel_y - offset_y, time = 0.2 SECONDS)
 		is_swarming = FALSE

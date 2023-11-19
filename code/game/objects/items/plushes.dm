@@ -31,7 +31,7 @@
 	var/normal_desc
 	//--end of love :'(--
 
-/obj/item/toy/plush/Initialize()
+/obj/item/toy/plush/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/squeak, squeak_override)
 
@@ -133,6 +133,9 @@
 		if(grenade)
 			to_chat(user, span_warning("[src] already has a grenade!"))
 			return
+		if(taped) //yogs - no
+			to_chat(user, span_warning("[src] is too sticky to add a grenade!"))
+			return
 		if(!user.transferItemToLoc(I, src))
 			return
 		user.visible_message(span_warning("[user] slides [grenade] into [src]."), \
@@ -215,7 +218,7 @@
 
 /obj/item/toy/plush/proc/heartbreak(obj/item/toy/plush/Brutus)
 	if(lover != Brutus)
-		to_chat(world, "lover != Brutus")
+		debug_admins("lover != Brutus")
 		return	//why are we considering someone we don't love?
 
 	scorned.Add(Brutus)
@@ -233,7 +236,7 @@
 		vowbroken = TRUE
 		mood_message = pick(vowbroken_message)
 
-	update_desc()
+	update_appearance(UPDATE_DESC)
 
 /obj/item/toy/plush/proc/scorned_by(obj/item/toy/plush/Outmoded)
 	scorned_by.Add(Outmoded)
@@ -247,7 +250,7 @@
 	lover.cheer_up()
 
 	mood_message = pick(love_message)
-	update_desc()
+	update_appearance(UPDATE_DESC)
 
 	if(partner)	//who?
 		partner = null	//more like who cares
@@ -264,7 +267,7 @@
 	partner.heal_memories()
 
 	mood_message = pick(partner_message)
-	update_desc()
+	update_appearance(UPDATE_DESC)
 
 /obj/item/toy/plush/proc/plop(obj/item/toy/plush/Daddy)
 	if(partner != Daddy)
@@ -289,12 +292,12 @@
 	young = TRUE
 	name = "[Mama] Jr"	//Icelandic naming convention pending
 	normal_desc = "[src] is a little baby of [maternal_parent] and [paternal_parent]!"	//original desc won't be used so the child can have moods
-	update_desc()
+	update_appearance(UPDATE_DESC)
 
 	Mama.mood_message = pick(Mama.parent_message)
-	Mama.update_desc()
+	Mama.update_appearance(UPDATE_DESC)
 	Dada.mood_message = pick(Dada.parent_message)
-	Dada.update_desc()
+	Dada.update_appearance(UPDATE_DESC)
 
 /obj/item/toy/plush/proc/bad_news(obj/item/toy/plush/Deceased)	//cotton to cotton, sawdust to sawdust
 	var/is_that_letter_for_me = FALSE
@@ -333,7 +336,7 @@
 	if(is_that_letter_for_me)
 		heartbroken = TRUE
 		mood_message = pick(heartbroken_message)
-		update_desc()
+		update_appearance(UPDATE_DESC)
 
 /obj/item/toy/plush/proc/cheer_up()	//it'll be all right
 	if(!heartbroken)
@@ -345,7 +348,7 @@
 
 	if(mood_message in heartbroken_message)
 		mood_message = null
-	update_desc()
+	update_appearance(UPDATE_DESC)
 
 /obj/item/toy/plush/proc/heal_memories()	//time fixes all wounds
 	if(!vowbroken)
@@ -354,7 +357,8 @@
 			mood_message = null
 	cheer_up()
 
-/obj/item/toy/plush/proc/update_desc()
+/obj/item/toy/plush/update_desc(updates=ALL)
+	. = ..()
 	desc = normal_desc
 	if(mood_message)
 		desc += mood_message
@@ -409,7 +413,7 @@
 			P.clashing = FALSE
 			return
 		playsound(src, 'sound/magic/clockwork/ratvar_attack.ogg', 50, TRUE, frequency = 2)
-		sleep(2.4)
+		sleep(0.24 SECONDS)
 		if(QDELETED(src))
 			P.clashing = FALSE
 			return
@@ -420,7 +424,7 @@
 			a_winnar_is = src
 			break
 		P.SpinAnimation(5, 0)
-		sleep(5)
+		sleep(0.5 SECONDS)
 		if(QDELETED(src))
 			P.clashing = FALSE
 			return
@@ -428,7 +432,7 @@
 			clash_target = null
 			return
 		playsound(P, 'sound/magic/clockwork/narsie_attack.ogg', 50, TRUE, frequency = 2)
-		sleep(3.3)
+		sleep(0.33 SECONDS)
 		if(QDELETED(src))
 			P.clashing = FALSE
 			return
@@ -440,7 +444,7 @@
 			break
 		SpinAnimation(5, 0)
 		victory_chance += 10
-		sleep(5)
+		sleep(0.5 SECONDS)
 	if(!a_winnar_is)
 		a_winnar_is = pick(src, P)
 	if(a_winnar_is == src)
@@ -461,8 +465,8 @@
 		P.clashing = FALSE
 
 /obj/item/toy/plush/narplush
-	name = "\improper Nar'Sie plushie"
-	desc = "A small stuffed doll of the elder goddess Nar'Sie. Who thought this was a good children's toy?"
+	name = "\improper Nar'sie plushie"
+	desc = "A small stuffed doll of the elder goddess Nar'sie. Who thought this was a good children's toy?"
 	icon_state = "narplush"
 	var/clashing
 	gender = FEMALE	//it's canon if the toy is
@@ -513,7 +517,7 @@
 	icon_state = "plushie_awake"
 	item_state = "plushie_awake"
 
-/obj/item/toy/plush/awakenedplushie/ComponentInitialize()
+/obj/item/toy/plush/awakenedplushie/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/edit_complainer)
 
@@ -582,7 +586,16 @@
 	name = "shark plushie"
 	desc = "A smaller, friendlier, and fluffier version of the real thing."
 	gender = MALE
+	lefthand_file = 'icons/mob/inhands/plushes_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/plushes_righthand.dmi'
 	icon_state = "blahaj"
 	item_state = "blahaj"
 	attack_verb = list("chomped", "gnawed", "bit")
 	squeak_override = list('sound/weapons/bite.ogg'= 1)
+
+/obj/item/toy/plush/cdragon
+	name = "crystal dragon plushie"
+	desc = "The hero we needed but never deserved. Now in plush form!"
+	gender = FEMALE
+	icon_state = "plush_cdragon"
+	item_state = "plush_cdragon"

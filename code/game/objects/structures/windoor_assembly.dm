@@ -47,7 +47,8 @@
 	setDir(ini_dir)
 	move_update_air(T)
 
-/obj/structure/windoor_assembly/update_icon()
+/obj/structure/windoor_assembly/update_icon_state()
+	. = ..()
 	icon_state = "[facing]_[secure ? "secure_" : ""]windoor_assembly[state]"
 
 /obj/structure/windoor_assembly/CanAllowThrough(atom/movable/mover, turf/target)
@@ -150,7 +151,7 @@
 					return
 				to_chat(user, span_notice("You start to reinforce the windoor with plasteel..."))
 
-				if(do_after(user, 4 SECONDS, target = src))
+				if(do_after(user, 4 SECONDS, src))
 					if(!src || secure || P.get_amount() < 2)
 						return
 
@@ -166,7 +167,7 @@
 			else if(istype(W, /obj/item/stack/cable_coil) && anchored)
 				user.visible_message("[user] wires the windoor assembly.", span_notice("You start to wire the windoor assembly..."))
 
-				if(do_after(user, 4 SECONDS, target = src))
+				if(do_after(user, 4 SECONDS, src))
 					if(!src || !anchored || src.state != "01")
 						return
 					var/obj/item/stack/cable_coil/CC = W
@@ -208,7 +209,7 @@
 				user.visible_message("[user] installs the electronics into the airlock assembly.",
 					span_notice("You start to install electronics into the airlock assembly..."))
 
-				if(do_after(user, 4 SECONDS, target = src))
+				if(do_after(user, 4 SECONDS, src))
 					if(!src || electronics)
 						W.forceMove(drop_location())
 						return
@@ -309,34 +310,37 @@
 				return ..()
 
 	//Update to reflect changes(if applicable)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 
 
-/obj/structure/windoor_assembly/ComponentInitialize()
+/obj/structure/windoor_assembly/Initialize(mapload)
 	. = ..()
-	AddComponent(
-		/datum/component/simple_rotation,
-		ROTATION_ALTCLICK | ROTATION_CLOCKWISE | ROTATION_COUNTERCLOCKWISE | ROTATION_VERBS,
-		null,
-		CALLBACK(src, .proc/can_be_rotated),
-		CALLBACK(src,.proc/after_rotation)
-		)
+	var/static/rotation_flags = ROTATION_ALTCLICK | ROTATION_CLOCKWISE | ROTATION_COUNTERCLOCKWISE | ROTATION_VERBS
+	AddComponent(/datum/component/simple_rotation, rotation_flags, can_be_rotated=CALLBACK(src, PROC_REF(can_be_rotated)), after_rotation=CALLBACK(src, PROC_REF(after_rotation)))
 
-/obj/structure/windoor_assembly/proc/can_be_rotated(mob/user,rotation_type)
+/obj/structure/windoor_assembly/proc/can_be_rotated(mob/user, rotation_type)
+	var/silent = FALSE
+	if(!Adjacent(user))
+		silent = TRUE
+
 	if(anchored)
-		to_chat(user, span_warning("[src] cannot be rotated while it is fastened to the floor!"))
+		if (!silent)
+			to_chat(user, span_warning("[src] cannot be rotated while it is fastened to the floor!"))
 		return FALSE
+
 	var/target_dir = turn(dir, rotation_type == ROTATION_CLOCKWISE ? -90 : 90)
 
 	if(!valid_window_location(loc, target_dir))
-		to_chat(user, span_warning("[src] cannot be rotated in that direction!"))
+		if (!silent)
+			to_chat(user, span_warning("[src] cannot be rotated in that direction!"))
 		return FALSE
+
 	return TRUE
 
 /obj/structure/windoor_assembly/proc/after_rotation(mob/user)
 	ini_dir = dir
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 //Flips the windoor assembly, determines whather the door opens to the left or the right
 /obj/structure/windoor_assembly/verb/flip()
@@ -358,5 +362,5 @@
 		facing = "l"
 		to_chat(usr, span_notice("The windoor will now slide to the left."))
 
-	update_icon()
+	update_appearance(UPDATE_ICON)
 	return

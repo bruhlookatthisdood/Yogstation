@@ -2,13 +2,20 @@
 
 #define in_range(source, user) (get_dist(source, user) <= 1 && (get_step(source, 0)?:z) == (get_step(user, 0)?:z))
 
+/// Within given range, but not counting z-levels
+#define IN_GIVEN_RANGE(source, other, given_range) (get_dist(source, other) <= given_range && (get_step(source, 0)?:z) == (get_step(other, 0)?:z))
+
 #define isatom(A) (isloc(A))
 
 #define isweakref(D) (istype(D, /datum/weakref))
 
+#define isdatum(thing) (istype(thing, /datum))
+
 #define isappearance(A) (!isnum(A) && copytext("\ref[A]", 4, 6) == "3a")
 
 #define isnan(x) ( isnum((x)) && ((x) != (x)) )
+
+#define isinternalorgan(A) (istype(A, /obj/item/organ/internal))
 
 //Turfs
 //#define isturf(A) (istype(A, /turf)) This is actually a byond built-in. Added here for completeness sake.
@@ -79,6 +86,11 @@ GLOBAL_LIST_INIT(turfs_without_ground, typecacheof(list(
 #define isethereal(A) (is_species(A, /datum/species/ethereal))
 #define isvampire(A) (is_species(A,/datum/species/vampire))
 #define ispreternis(A) (is_species(A,/datum/species/preternis))
+#define isszlachta(A) (is_species(A, /datum/species/szlachta))
+#define isipc(A) (is_species(A, /datum/species/ipc))
+#define issnail(A) (is_species(A, /datum/species/snail))
+#define isandroid(A) (is_species(A, /datum/species/android))
+#define isdummy(A) (istype(A, /mob/living/carbon/human/dummy))
 
 //more carbon mobs
 #define ismonkey(A) (istype(A, /mob/living/carbon/monkey))
@@ -145,9 +157,13 @@ GLOBAL_LIST_INIT(turfs_without_ground, typecacheof(list(
 
 #define isconstruct(A) (istype(A, /mob/living/simple_animal/hostile/construct))
 
+#define isfauna(A) (istype(A, /mob/living/simple_animal/hostile/asteroid))
+
 #define ismegafauna(A) (istype(A, /mob/living/simple_animal/hostile/megafauna))
 
 #define isclown(A) (istype(A, /mob/living/simple_animal/hostile/retaliate/clown))
+
+#define issupplypod(A) (istype(A, /obj/structure/closet/supplypod))
 
 GLOBAL_LIST_INIT(shoefootmob, typecacheof(list(
 	/mob/living/carbon/human/,
@@ -219,6 +235,8 @@ GLOBAL_LIST_INIT(heavyfootmob, typecacheof(list(
 
 #define isitem(A) (istype(A, /obj/item))
 
+#define isstack(A) (istype(A, /obj/item/stack))
+
 #define isidcard(I) (istype(I, /obj/item/card/id))
 
 #define isstructure(A) (istype(A, /obj/structure))
@@ -237,9 +255,11 @@ GLOBAL_LIST_INIT(heavyfootmob, typecacheof(list(
 
 #define isbodypart(A) (istype(A, /obj/item/bodypart))
 
-#define isprojectile(A) (istype(A, /obj/item/projectile))
+#define isprojectile(A) (istype(A, /obj/projectile))
 
 #define isgun(A) (istype(A, /obj/item/gun))
+
+#define is_reagent_container(O) (istype(O, /obj/item/reagent_containers))
 
 //Assemblies
 #define isassembly(O) (istype(O, /obj/item/assembly))

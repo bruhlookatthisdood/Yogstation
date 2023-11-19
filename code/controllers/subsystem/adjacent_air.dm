@@ -17,10 +17,14 @@ SUBSYSTEM_DEF(adjacent_air)
 #endif
 	return ..()
 
+/datum/controller/subsystem/adjacent_air/get_metrics()
+	. = ..()
+	.["queued"] = length(queue)
+
 /datum/controller/subsystem/adjacent_air/Initialize()
 	while(length(queue))
 		fire(mc_check = FALSE)
-	return ..()
+	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/adjacent_air/fire(resumed = FALSE, mc_check = TRUE)
 

@@ -17,18 +17,18 @@
 	if(!istype(H.wear_mask, /obj/item/clothing/mask/yogs/cluwne))
 		if(!H.temporarilyRemoveItemFromInventory(H.wear_mask))
 			qdel(H.wear_mask)
-		H.equip_to_slot_or_del(new /obj/item/clothing/mask/yogs/cluwne(H), SLOT_WEAR_MASK)
+		H.equip_to_slot_or_del(new /obj/item/clothing/mask/yogs/cluwne(H), ITEM_SLOT_MASK)
 	if(!istype(H.w_uniform, /obj/item/clothing/under/yogs/cluwne))
 		if(!H.temporarilyRemoveItemFromInventory(H.w_uniform))
 			qdel(H.w_uniform)
-		H.equip_to_slot_or_del(new /obj/item/clothing/under/yogs/cluwne(H), SLOT_W_UNIFORM)
+		H.equip_to_slot_or_del(new /obj/item/clothing/under/yogs/cluwne(H), ITEM_SLOT_ICLOTHING)
 	if(!istype(H.shoes, /obj/item/clothing/shoes/yogs/cluwne))
 		if(!H.temporarilyRemoveItemFromInventory(H.shoes))
 			qdel(H.shoes)
-		H.equip_to_slot_or_del(new /obj/item/clothing/shoes/yogs/cluwne(H), SLOT_SHOES)
+		H.equip_to_slot_or_del(new /obj/item/clothing/shoes/yogs/cluwne(H), ITEM_SLOT_FEET)
 
-	owner.equip_to_slot_or_del(new /obj/item/clothing/gloves/color/white(owner), SLOT_GLOVES) // this is purely for cosmetic purposes incase they aren't wearing anything in that slot
-	owner.equip_to_slot_or_del(new /obj/item/storage/backpack/clown(owner), SLOT_BACK) // ditto
+	owner.equip_to_slot_or_del(new /obj/item/clothing/gloves/color/white(owner), ITEM_SLOT_GLOVES) // this is purely for cosmetic purposes incase they aren't wearing anything in that slot
+	owner.equip_to_slot_or_del(new /obj/item/storage/backpack/clown(owner), ITEM_SLOT_BACK) // ditto
 
 /datum/mutation/human/cluwne/on_life(mob/living/carbon/human/owner)
 	if((prob(15) && owner.IsUnconscious()))
@@ -41,11 +41,11 @@
 			if(6)
 				owner.Stun(1)
 				owner.Knockdown(20)
-				owner.Jitter(500)
+				owner.adjust_jitter(500 SECONDS)
 
 /datum/mutation/human/cluwne/on_losing(mob/living/carbon/human/owner)
 	owner.adjust_fire_stacks(1)
-	owner.IgniteMob()
+	owner.ignite_mob()
 	owner.dna.add_mutation(CLUWNEMUT)
 
 /mob/living/carbon/human/proc/cluwneify()
@@ -58,7 +58,7 @@
 
 /datum/mutation/human/tourettes/on_life()
 	if(prob(10) && owner.stat == CONSCIOUS)
-		owner.Stun(20)
+		owner.Stun(2 SECONDS)
 		switch(rand(1, 3))
 			if(1)
 				owner.emote("twitch")
@@ -68,8 +68,8 @@
 		var/y_offset_old = owner.pixel_y
 		var/x_offset = owner.pixel_x + rand(-2,2)
 		var/y_offset = owner.pixel_y + rand(-1,1)
-		animate(owner, pixel_x = x_offset, pixel_y = y_offset, time = 1)
-		animate(owner, pixel_x = x_offset_old, pixel_y = y_offset_old, time = 1)
+		animate(owner, pixel_x = x_offset, pixel_y = y_offset, time = 0.1 SECONDS)
+		animate(owner, pixel_x = x_offset_old, pixel_y = y_offset_old, time = 0.1 SECONDS)
 
 /datum/mutation/human/hulk
 	species_allowed = list()

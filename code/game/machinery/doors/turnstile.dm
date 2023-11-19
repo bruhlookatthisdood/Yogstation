@@ -3,24 +3,26 @@
 	desc = "A mechanical door that permits one-way access to an area."
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "turnstile_map"
-	power_channel = ENVIRON
+	power_channel = AREA_USAGE_ENVIRON
 	density = TRUE
 	obj_integrity = 250
 	max_integrity = 250
 	//Robust! It'll be tough to break...
-	armor = list("melee" = 50, "bullet" = 20, "laser" = 0, "energy" = 80, "bomb" = 10, "bio" = 100, "rad" = 100, "fire" = 90, "acid" = 50)
+	armor = list(MELEE = 50, BULLET = 20, LASER = 0, ENERGY = 80, BOMB = 10, BIO = 100, RAD = 100, FIRE = 90, ACID = 50)
 	anchored = TRUE
 	use_power = FALSE
 	idle_power_usage = 2
 	resistance_flags = LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF
 	layer = OPEN_DOOR_LAYER
-	climbable = FALSE
+
 /obj/machinery/turnstile/brig
 	name = "Brig turnstile"
 	//Seccies and brig phys may always pass, either way.
 	req_one_access = list(ACCESS_SEC_DOORS)
-	
-/obj/machinery/turnstile/Initialize()
+	max_integrity = 400 /// Made of damn good steel
+	damage_deflection = 21 /// Same as airlocks!
+
+/obj/machinery/turnstile/Initialize(mapload)
 	. = ..()
 	icon_state = "turnstile"
 

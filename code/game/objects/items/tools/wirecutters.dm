@@ -21,7 +21,7 @@
 
 	tool_behaviour = TOOL_WIRECUTTER
 	toolspeed = 1
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 50, "acid" = 30)
+	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 50, ACID = 30)
 	var/random_color = TRUE
 	var/static/list/wirecutter_colors = list(
 		"blue" = "#1861d5",
@@ -34,21 +34,21 @@
 	)
 
 
-/obj/item/wirecutters/Initialize()
+/obj/item/wirecutters/Initialize(mapload)
 	. = ..()
 	if(random_color) //random colors!
 		icon_state = "cutters"
 		var/our_color = pick(wirecutter_colors)
 		add_atom_colour(wirecutter_colors[our_color], FIXED_COLOUR_PRIORITY)
-		update_icon()
+		update_appearance(UPDATE_ICON)
 
-/obj/item/wirecutters/update_icon()
+/obj/item/wirecutters/update_overlays()
+	. = ..()
 	if(!random_color) //icon override
 		return
-	cut_overlays()
 	var/mutable_appearance/base_overlay = mutable_appearance(icon, "cutters_cutty_thingy")
 	base_overlay.appearance_flags = RESET_COLOR
-	add_overlay(base_overlay)
+	. += base_overlay
 
 /obj/item/wirecutters/attack(mob/living/carbon/C, mob/user)
 	if(istype(C) && C.handcuffed && istype(C.handcuffed, /obj/item/restraints/handcuffs/cable))
@@ -57,9 +57,16 @@
 		return
 	else if(istype(C) && C.has_status_effect(STATUS_EFFECT_CHOKINGSTRAND))
 		to_chat(C, span_notice("You attempt to remove the durathread strand from around your neck."))
-		if(do_after(user, 1.5 SECONDS, null, C))
+		if(do_after(user, 1.5 SECONDS, C))
 			to_chat(C, span_notice("You succesfuly remove the durathread strand."))
 			C.remove_status_effect(STATUS_EFFECT_CHOKINGSTRAND)
+	else if(istype(C) && C.legcuffed && (C.legcuffed.type == /obj/item/restraints/legcuffs/bola || istype(C.legcuffed, /obj/item/restraints/legcuffs/beartrap/energy)))
+		user.visible_message(span_notice("[user] cuts [C]'s restraints with [src]!"))
+		qdel(C.legcuffed)
+		C.legcuffed = null
+		return	
+	else if(!(user.a_intent == INTENT_HARM) && attempt_initiate_surgery(src, C, user))
+		return
 	else
 		..()
 

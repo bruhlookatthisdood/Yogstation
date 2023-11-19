@@ -27,7 +27,7 @@
 	else
 		remove_atom_colour(FIXED_COLOUR_PRIORITY)
 
-/mob/living/simple_animal/hostile/blob/Initialize()
+/mob/living/simple_animal/hostile/blob/Initialize(mapload)
 	. = ..()
 	if(!independent) //no pulling people deep into the blob
 		verbs -= /mob/living/verb/pulled
@@ -107,7 +107,7 @@
 	var/mob/living/carbon/human/oldguy
 	var/is_zombie = FALSE
 
-/mob/living/simple_animal/hostile/blob/blobspore/Initialize(mapload, var/obj/structure/blob/factory/linked_node)
+/mob/living/simple_animal/hostile/blob/blobspore/Initialize(mapload, obj/structure/blob/factory/linked_node)
 	if(istype(linked_node))
 		factory = linked_node
 		factory.spores += src
@@ -115,7 +115,7 @@
 	if(linked_node.overmind && istype(linked_node.overmind.blobstrain, /datum/blobstrain/reagent/distributed_neurons) && !istype(src, /mob/living/simple_animal/hostile/blob/blobspore/weak))
 		notify_ghosts("A controllable spore has been created in \the [get_area(src)].", source = src, action = NOTIFY_ORBIT, flashwindow = FALSE, header = "Sentient Spore Created")
 
-/mob/living/simple_animal/hostile/blob/blobspore/Life()
+/mob/living/simple_animal/hostile/blob/blobspore/Life(seconds_per_tick = SSMOBS_DT, times_fired)
 	if(!is_zombie && isturf(src.loc))
 		for(var/mob/living/carbon/human/H in view(src,1)) //Only for corpse right next to/on same tile
 			if(H.stat == DEAD)
@@ -136,7 +136,7 @@
 		return
 	if(key || stat)
 		return
-	var/pod_ask = alert("Become a blob spore?", "Are you bulbous enough?", "Yes", "No")
+	var/pod_ask = tgui_alert(usr,"Become a blob spore?", "Are you bulbous enough?", list("Yes", "No"))
 	if(pod_ask == "No" || !src || QDELETED(src))
 		return
 	if(key)
@@ -154,7 +154,7 @@
 	health = maxHealth
 	name = "blob zombie"
 	desc = "A shambling corpse animated by the blob."
-	mob_biotypes += MOB_HUMANOID
+	mob_biotypes |= MOB_HUMANOID
 	melee_damage_lower += 8
 	melee_damage_upper += 11
 	movement_type = GROUND
@@ -172,7 +172,7 @@
 
 /mob/living/simple_animal/hostile/blob/blobspore/death(gibbed)
 	// On death, create a small smoke of harmful gas (s-Acid)
-	var/datum/effect_system/smoke_spread/chem/S = new
+	var/datum/effect_system/fluid_spread/smoke/chem/S = new
 	var/turf/location = get_turf(src)
 
 	// Create the reagents to put into the air
@@ -187,7 +187,7 @@
 
 	// Attach the smoke spreader and setup/start it.
 	S.attach(location)
-	S.set_up(reagents, death_cloud_size, location, silent = TRUE)
+	S.set_up(death_cloud_size, location = location, carry = reagents, silent = TRUE)
 	S.start()
 	if(factory)
 		factory.spore_delay = world.time + factory.spore_cooldown //put the factory on cooldown
@@ -249,9 +249,9 @@
 	force_threshold = 10
 	pressure_resistance = 50
 	mob_size = MOB_SIZE_LARGE
-	hud_type = /datum/hud/blobbernaut
+	hud_type = /datum/hud/living/blobbernaut
 
-/mob/living/simple_animal/hostile/blob/blobbernaut/Life()
+/mob/living/simple_animal/hostile/blob/blobbernaut/Life(seconds_per_tick = SSMOBS_DT, times_fired)
 	if(..())
 		var/list/blobs_in_area = range(2, src)
 		if(independent)
@@ -285,15 +285,6 @@
 				I.color = overmind.blobstrain.complementary_color
 			flick_overlay_view(I, src, 8)
 
-/mob/living/simple_animal/hostile/blob/blobbernaut/adjustHealth(amount, updating_health = TRUE, forced = FALSE)
-	. = ..()
-	if(updating_health)
-		update_health_hud()
-
-/mob/living/simple_animal/hostile/blob/blobbernaut/update_health_hud()
-	if(hud_used)
-		hud_used.healths.maptext = "<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#e36600'>[round((health / maxHealth) * 100, 0.5)]%</font></div>"
-
 /mob/living/simple_animal/hostile/blob/blobbernaut/AttackingTarget()
 	. = ..()
 	if(. && isliving(target) && overmind)
@@ -315,6 +306,8 @@
 	if(factory)
 		factory.naut = null //remove this naut from its factory
 		factory.max_integrity = initial(factory.max_integrity)
+	if(overmind)
+		to_chat(overmind, "<font color=\"#EE4000\">[src] has died in [get_area(src)]!</font>")
 	flick("blobbernaut_death", src)
 
 /mob/living/simple_animal/hostile/blob/blobbernaut/independent

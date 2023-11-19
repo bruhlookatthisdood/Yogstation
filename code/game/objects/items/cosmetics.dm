@@ -25,7 +25,7 @@
 	name = "lipstick"
 	icon_state = "random_lipstick"
 
-/obj/item/lipstick/random/Initialize()
+/obj/item/lipstick/random/Initialize(mapload)
 	. = ..()
 	icon_state = "lipstick"
 	colour = pick("red","purple","lime","black","green","blue","white")
@@ -70,7 +70,7 @@
 		else
 			user.visible_message(span_warning("[user] begins to do [H]'s lips with \the [src]."), \
 								 span_notice("You begin to apply \the [src] on [H]'s lips..."))
-			if(do_after(user, 2 SECONDS, target = H))
+			if(do_after(user, 2 SECONDS, H))
 				user.visible_message("[user] does [H]'s lips with \the [src].", \
 									 span_notice("You apply \the [src] on [H]'s lips."))
 				H.lip_style = "lipstick"
@@ -94,7 +94,7 @@
 			else
 				user.visible_message(span_warning("[user] begins to wipe [H]'s lipstick off with \the [src]."), \
 								 	 span_notice("You begin to wipe off [H]'s lipstick..."))
-				if(do_after(user, 1 SECONDS, target = H))
+				if(do_after(user, 1 SECONDS, H))
 					user.visible_message("[user] wipes [H]'s lipstick off with \the [src].", \
 										 span_notice("You wipe off [H]'s lipstick."))
 					H.lip_style = null
@@ -146,7 +146,7 @@
 						to_chat(user, span_warning("The mask is in the way!"))
 						return
 					user.visible_message(span_notice("[user] tries to change [H]'s facial hair style using [src]."), span_notice("You try to change [H]'s facial hair style using [src]."))
-					if(new_style && do_after(user, 6 SECONDS, target = H))
+					if(new_style && do_after(user, 6 SECONDS, H))
 						user.visible_message(span_notice("[user] successfully changes [H]'s facial hair style using [src]."), span_notice("You successfully change [H]'s facial hair style using [src]."))
 						H.facial_hair_style = new_style
 						H.update_hair()
@@ -168,7 +168,7 @@
 				if(H == user) //shaving yourself
 					user.visible_message("[user] starts to shave [user.p_their()] facial hair with [src].", \
 										 span_notice("You take a moment to shave your facial hair with [src]..."))
-					if(do_after(user, 5 SECONDS, target = H))
+					if(do_after(user, 5 SECONDS, H))
 						user.visible_message("[user] shaves [user.p_their()] facial hair clean with [src].", \
 											 span_notice("You finish shaving with [src]. Fast and clean!"))
 						shave(H, location)
@@ -191,8 +191,11 @@
 				if(!get_location_accessible(H, location))
 					to_chat(user, span_warning("The headgear is in the way!"))
 					return
+				if(HAS_TRAIT(H, TRAIT_BALD))
+					to_chat(user, span_warning("[H] is just way too bald. Like, really really bald."))
+					return
 				user.visible_message(span_notice("[user] tries to change [H]'s hairstyle using [src]."), span_notice("You try to change [H]'s hairstyle using [src]."))
-				if(new_style && do_after(user, 6 SECONDS, target = H))
+				if(new_style && do_after(user, 6 SECONDS, H))
 					user.visible_message(span_notice("[user] successfully changes [H]'s hairstyle using [src]."), span_notice("You successfully change [H]'s hairstyle using [src]."))
 					H.hair_style = new_style
 					H.update_hair()
@@ -212,7 +215,7 @@
 				if(H == user) //shaving yourself
 					user.visible_message("[user] starts to shave [user.p_their()] head with [src].", \
 										 span_notice("You start to shave your head with [src]..."))
-					if(do_after(user, 0.5 SECONDS, target = H))
+					if(do_after(user, 0.5 SECONDS, H))
 						user.visible_message("[user] shaves [user.p_their()] head with [src].", \
 											 span_notice("You finish shaving with [src]."))
 						shave(H, location)
@@ -220,7 +223,7 @@
 					var/turf/H_loc = H.loc
 					user.visible_message(span_warning("[user] tries to shave [H]'s head with [src]!"), \
 										 span_notice("You start shaving [H]'s head..."))
-					if(do_after(user, 5 SECONDS, target = H))
+					if(do_after(user, 5 SECONDS, H))
 						if(H_loc == H.loc)
 							user.visible_message(span_warning("[user] shaves [H]'s head bald with [src]!"), \
 												 span_notice("You shave [H]'s head bald."))
@@ -259,7 +262,7 @@
 	if(!new_grad_style)
 		return
 
-	var/new_grad_color = input(usr, "Choose a secondary hair color:", "Character Preference","#"+human_target.grad_color) as color|null
+	var/new_grad_color = input(usr, "Choose a secondary hair color:", "Character Preference",human_target.grad_color) as color|null
 	if(!new_grad_color)
 		return
 

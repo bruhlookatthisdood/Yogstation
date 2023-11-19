@@ -20,7 +20,6 @@
 	density = TRUE
 	anchored = TRUE
 	layer = TABLE_LAYER
-	climbable = TRUE
 	pass_flags = LETPASSTHROW //You can throw objects over this, despite it's density.")
 	var/frame = /obj/structure/table_frame
 	var/framestack = /obj/item/stack/rods
@@ -33,6 +32,13 @@
 	integrity_failure = 30
 	smooth = SMOOTH_TRUE
 	canSmoothWith = list(/obj/structure/table, /obj/structure/table/reinforced)
+
+/obj/structure/table/Initialize(mapload)
+	. = ..()
+	AddElement(/datum/element/climbable)
+	AddComponent(/datum/component/surgery_bed, \
+		success_chance = 0.8, \
+	)
 
 /** Performs a complex check for toe stubbing as people would scream "IMPROVE DONT REMOVE" if I had my way.
   * Uses an early probability based return for to save cycles which is perfectly valid since the highest probability is 20 anyway.
@@ -70,7 +76,8 @@
 /obj/structure/table/proc/deconstruction_hints(mob/user)
 	return span_notice("The top is <b>screwed</b> on, but the main <b>bolts</b> are also visible.")
 
-/obj/structure/table/update_icon()
+/obj/structure/table/update_icon(updates=ALL)
+	. = ..()
 	if(smooth)
 		queue_smooth(src)
 		queue_smooth_neighbors(src)
@@ -104,12 +111,12 @@
 				if(user.grab_state < GRAB_AGGRESSIVE)
 					to_chat(user, span_warning("You need a better grip to do that!"))
 					return
-				if(do_after(user, 3.5 SECONDS, target = pushed_mob))
+				if(do_after(user, 3.5 SECONDS, pushed_mob))
 					tablepush(user, pushed_mob)
 			if(user.a_intent == INTENT_HELP)
 				pushed_mob.visible_message(span_notice("[user] begins to place [pushed_mob] onto [src]..."), \
 									span_userdanger("[user] begins to place [pushed_mob] onto [src]..."))
-				if(do_after(user, 3.5 SECONDS, target = pushed_mob))
+				if(do_after(user, 3.5 SECONDS,pushed_mob))
 					tableplace(user, pushed_mob)
 				else
 					return
@@ -250,10 +257,10 @@
 	canSmoothWith = null
 	max_integrity = 70
 	resistance_flags = ACID_PROOF
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 80, "acid" = 100)
+	armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 80, ACID = 100)
 	var/list/debris = list()
 
-/obj/structure/table/glass/Initialize()
+/obj/structure/table/glass/Initialize(mapload)
 	. = ..()
 	debris += new frame
 	debris += new /obj/item/shard
@@ -270,7 +277,7 @@
 		return
 	// Don't break if they're just flying past
 	if(AM.throwing)
-		addtimer(CALLBACK(src, .proc/throw_check, AM), 5)
+		addtimer(CALLBACK(src, PROC_REF(throw_check), AM), 5)
 	else
 		check_break(AM)
 
@@ -365,9 +372,9 @@
 		/obj/structure/table/wood/fancy/red,
 		/obj/structure/table/wood/fancy/royalblack,
 		/obj/structure/table/wood/fancy/royalblue)
-	var/smooth_icon = 'icons/obj/smooth_structures/fancy_table.dmi' // see Initialize()
+	var/smooth_icon = 'icons/obj/smooth_structures/fancy_table.dmi' // see Initialize(mapload)
 
-/obj/structure/table/wood/fancy/Initialize()
+/obj/structure/table/wood/fancy/Initialize(mapload)
 	. = ..()
 	// Needs to be set dynamically because table smooth sprites are 32x34,
 	// which the editor treats as a two-tile-tall object. The sprites are that
@@ -432,7 +439,7 @@
 	canSmoothWith = list(/obj/structure/table/reinforced, /obj/structure/table)
 	max_integrity = 200
 	integrity_failure = 50
-	armor = list("melee" = 10, "bullet" = 30, "laser" = 30, "energy" = 100, "bomb" = 20, "bio" = 0, "rad" = 0, "fire" = 80, "acid" = 70)
+	armor = list(MELEE = 10, BULLET = 30, LASER = 30, ENERGY = 100, BOMB = 20, BIO = 0, RAD = 0, FIRE = 80, ACID = 70)
 
 /obj/structure/table/reinforced/deconstruction_hints(mob/user)
 	if(deconstruction_ready)
@@ -471,7 +478,7 @@
 	buildstackamount = 1
 	canSmoothWith = list(/obj/structure/table/reinforced/brass, /obj/structure/table/bronze)
 
-/obj/structure/table/reinforced/brass/Initialize()
+/obj/structure/table/reinforced/brass/Initialize(mapload)
 	. = ..()
 	change_construction_value(2)
 
@@ -488,8 +495,8 @@
 	if(src) //do we still exist?
 		var/previouscolor = color
 		color = "#960000"
-		animate(src, color = previouscolor, time = 8)
-		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 8)
+		animate(src, color = previouscolor, time = 0.8 SECONDS)
+		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 0.8 SECONDS)
 
 /obj/structure/table/reinforced/brass/ratvar_act()
 	obj_integrity = max_integrity
@@ -518,46 +525,25 @@
 	icon_state = "optable"
 	buildstack = /obj/item/stack/sheet/mineral/silver
 	smooth = SMOOTH_FALSE
-	can_buckle = 1
-	buckle_lying = -1
-	buckle_requires_restraints = 1
-	var/mob/living/carbon/human/patient = null
-	var/obj/machinery/computer/operating/computer = null
+	can_buckle = TRUE
+	buckle_requires_restraints = TRUE
 
-/obj/structure/table/optable/Initialize()
+/obj/structure/table/optable/Initialize(mapload)
 	. = ..()
-	for(var/direction in GLOB.alldirs)
-		computer = locate(/obj/machinery/computer/operating) in get_step(src, direction)
-		if(computer)
-			computer.table = src
-			break
-
-/obj/structure/table/optable/Destroy()
-	. = ..()
-	if(computer && computer.table == src)
-		computer.table = null
+	AddComponent(/datum/component/surgery_bed, \
+		success_chance = 1, \
+		op_computer_linkable = TRUE, \
+	)
 
 /obj/structure/table/optable/tablepush(mob/living/user, mob/living/pushed_mob)
 	pushed_mob.forceMove(loc)
 	pushed_mob.set_resting(TRUE, TRUE)
 	visible_message(span_notice("[user] lays [pushed_mob] on [src]."))
-	get_patient()
 
-/obj/structure/table/optable/proc/get_patient()
-	var/mob/living/carbon/M = locate(/mob/living/carbon) in loc
-	if(M)
-		if(M.resting)
-			patient = M
-	else
-		patient = null
-
-/obj/structure/table/optable/proc/check_eligible_patient()
-	get_patient()
-	if(!patient)
-		return FALSE
-	if(ishuman(patient) ||  ismonkey(patient))
-		return TRUE
-	return FALSE
+/obj/structure/table/optable/debug/Initialize(mapload)
+	. = ..()
+	var/datum/component/surgery_bed/SB = GetComponent(/datum/component/surgery_bed)
+	SB.extra_surgeries = subtypesof(/datum/surgery)
 
 /*
  * Racks
@@ -621,7 +607,7 @@
 	user.changeNext_move(CLICK_CD_MELEE)
 	user.do_attack_animation(src, ATTACK_EFFECT_KICK)
 	user.visible_message(span_danger("[user] kicks [src]."), null, null, COMBAT_MESSAGE_RANGE)
-	take_damage(rand(4,8), BRUTE, "melee", 1)
+	take_damage(rand(4,8), BRUTE, MELEE, 1)
 
 /obj/structure/rack/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
 	switch(damage_type)
@@ -670,7 +656,7 @@
 		return
 	building = TRUE
 	to_chat(user, span_notice("You start constructing a rack..."))
-	if(do_after(user, 5 SECONDS, target = user, progress=TRUE))
+	if(do_after(user, 5 SECONDS, user))
 		if(!user.temporarilyRemoveItemFromInventory(src))
 			return
 		var/obj/structure/rack/R = new /obj/structure/rack(user.loc)

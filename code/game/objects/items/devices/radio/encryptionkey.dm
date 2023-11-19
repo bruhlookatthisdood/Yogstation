@@ -9,7 +9,7 @@
 	var/independent = FALSE
 	var/list/channels = list()
 
-/obj/item/encryptionkey/Initialize()
+/obj/item/encryptionkey/Initialize(mapload)
 	. = ..()
 	if(!channels.len)
 		desc = "An encryption key for a radio headset.  Has no special codes in it. You should probably tell a coder!"
@@ -47,6 +47,11 @@
 /obj/item/encryptionkey/headset_rob
 	name = "robotics radio encryption key"
 	icon_state = "rob_cypherkey"
+	channels = list(RADIO_CHANNEL_SCIENCE = 1, RADIO_CHANNEL_ENGINEERING = 1)
+
+/obj/item/encryptionkey/headset_net
+	name = "network admin's radio encryption key"
+	icon_state = "eng_cypherkey"
 	channels = list(RADIO_CHANNEL_SCIENCE = 1, RADIO_CHANNEL_ENGINEERING = 1)
 
 /obj/item/encryptionkey/headset_med

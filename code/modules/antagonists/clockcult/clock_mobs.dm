@@ -23,7 +23,7 @@
 	var/playstyle_string = span_heavy_brass("You are a bug, yell at whoever spawned you!")
 	var/empower_string = span_heavy_brass("You have nothing to empower, yell at the coders!") //Shown to the mob when the herald beacon activates
 
-/mob/living/simple_animal/hostile/clockwork/Initialize()
+/mob/living/simple_animal/hostile/clockwork/Initialize(mapload)
 	. = ..()
 	update_values()
 
@@ -37,13 +37,13 @@
 /mob/living/simple_animal/hostile/clockwork/ratvar_act()
 	fully_heal(TRUE)
 
-/mob/living/simple_animal/hostile/clockwork/electrocute_act(shock_damage, obj/source, siemens_coeff = 1, safety = 0, tesla_shock = 0, illusion = 0, stun = TRUE)
+/mob/living/simple_animal/hostile/clockwork/electrocute_act(shock_damage, obj/source, siemens_coeff = 1, safety = 0, tesla_shock = 0, illusion = 0, stun = TRUE, gib = FALSE)
 	return 0 //ouch, my metal-unlikely-to-be-damaged-by-electricity-body
 
 /mob/living/simple_animal/hostile/clockwork/examine(mob/user)
 	var/t_He = p_they(TRUE)
 	var/t_s = p_s()
-	var/msg = "<span class='brass'>*---------*\nThis is [icon2html(src, user)] \a <b>[src]</b>!\n"
+	var/msg = "<span class='brass'>This is [icon2html(src, user)] \a <b>[src]</b>!\n"
 	msg += "[desc]\n"
 	if(health < maxHealth)
 		msg += "<span class='warning'>"
@@ -55,7 +55,7 @@
 	var/addendum = examine_info()
 	if(addendum)
 		msg += "[addendum]\n"
-	msg += "*---------*</span>"
+	msg += "</span>"
 
 	return list(msg)
 

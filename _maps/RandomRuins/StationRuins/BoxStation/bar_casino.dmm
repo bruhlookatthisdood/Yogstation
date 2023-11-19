@@ -45,12 +45,6 @@
 /obj/structure/disposalpipe/segment,
 /turf/open/floor/plasteel/rockvault,
 /area/crew_quarters/bar)
-"aj" = (
-/obj/structure/sink/kitchen{
-	pixel_y = 28
-	},
-/turf/open/floor/plasteel/rockvault,
-/area/crew_quarters/bar)
 "ak" = (
 /obj/machinery/door/window/southleft{
 	base_state = "left";
@@ -157,12 +151,6 @@
 /turf/open/floor/plasteel/rockvault,
 /area/crew_quarters/bar)
 "ay" = (
-/turf/open/floor/plasteel/rockvault,
-/area/crew_quarters/bar)
-"az" = (
-/obj/machinery/camera{
-	c_tag = "Bar Storage"
-	},
 /turf/open/floor/plasteel/rockvault,
 /area/crew_quarters/bar)
 "aB" = (
@@ -730,6 +718,12 @@
 /obj/structure/disposalpipe/segment,
 /turf/open/floor/plasteel/ameridiner,
 /area/crew_quarters/kitchen)
+"cC" = (
+/obj/machinery/chem_master/condimaster{
+	name = "HoochMaster 2000"
+	},
+/turf/open/floor/plasteel/rockvault,
+/area/crew_quarters/bar)
 "cI" = (
 /obj/structure/chair/office/light{
 	dir = 1
@@ -794,15 +788,6 @@
 /obj/structure/sign/barsign,
 /turf/closed/wall,
 /area/crew_quarters/bar)
-"fG" = (
-/obj/structure/table,
-/obj/item/reagent_containers/food/snacks/mint,
-/obj/item/storage/box/donkpockets{
-	pixel_x = 3;
-	pixel_y = 3
-	},
-/turf/open/floor/plasteel/ameridiner,
-/area/crew_quarters/kitchen)
 "ge" = (
 /obj/structure/table,
 /obj/item/kitchen/rollingpin{
@@ -846,6 +831,19 @@
 /obj/machinery/griddle,
 /turf/open/floor/plasteel/ameridiner,
 /area/crew_quarters/kitchen)
+"xa" = (
+/obj/structure/table,
+/obj/item/reagent_containers/food/snacks/mint,
+/obj/effect/spawner/lootdrop/donkpockets{
+	pixel_x = -7;
+	pixel_y = -6
+	},
+/obj/effect/spawner/lootdrop/donkpockets{
+	pixel_x = -7;
+	pixel_y = 6
+	},
+/turf/open/floor/plasteel/ameridiner,
+/area/crew_quarters/kitchen)
 "yX" = (
 /obj/machinery/holopad,
 /turf/open/floor/carpet,
@@ -859,6 +857,14 @@
 	icon_state = "showroomfloor"
 	},
 /area/crew_quarters/kitchen)
+"zt" = (
+/obj/machinery/smartfridge/drinks,
+/obj/machinery/door/poddoor/shutters/preopen{
+	id = "barshutters";
+	name = "bar shutters"
+	},
+/turf/open/floor/wood,
+/area/crew_quarters/bar)
 "Ax" = (
 /obj/structure/table/reinforced,
 /obj/machinery/door/firedoor/border_only,
@@ -882,14 +888,6 @@
 /obj/machinery/door/poddoor/shutters/preopen{
 	id = "barshutters";
 	name = "bar shutters"
-	},
-/turf/open/floor/wood,
-/area/crew_quarters/bar)
-"Dp" = (
-/obj/machinery/smartfridge/drinks,
-/obj/machinery/door/poddoor/preopen{
-	id = "barshutters";
-	name = "privacy shutters"
 	},
 /turf/open/floor/wood,
 /area/crew_quarters/bar)
@@ -922,7 +920,7 @@
 /turf/open/floor/carpet,
 /area/crew_quarters/bar)
 "JA" = (
-/obj/item/twohanded/required/kirbyplants/random,
+/obj/item/kirbyplants/random,
 /turf/open/floor/carpet,
 /area/crew_quarters/bar)
 "Kb" = (
@@ -932,7 +930,7 @@
 	id = "kitchen";
 	name = "kitchen shutters"
 	},
-/obj/item/storage/box/fancy/donut_box,
+/obj/item/storage/fancy/donut_box,
 /obj/machinery/door/firedoor/border_only{
 	dir = 1
 	},
@@ -957,6 +955,15 @@
 	name = "privacy shutters"
 	},
 /turf/open/floor/plating,
+/area/crew_quarters/bar)
+"PF" = (
+/obj/machinery/camera{
+	c_tag = "Bar Storage"
+	},
+/obj/structure/sink/kitchen{
+	pixel_y = 28
+	},
+/turf/open/floor/plasteel/rockvault,
 /area/crew_quarters/bar)
 "Qz" = (
 /obj/structure/disposalpipe/segment,
@@ -1310,7 +1317,7 @@ da
 ac
 "}
 (15,1,1) = {"
-aj
+cC
 ay
 aM
 cc
@@ -1320,14 +1327,14 @@ bq
 cm
 bh
 cm
-Dp
+zt
 ap
 db
 ac
 "}
 (16,1,1) = {"
 ag
-az
+PF
 ba
 ag
 ag
@@ -1382,7 +1389,7 @@ bi
 am
 bA
 bQ
-fG
+xa
 tZ
 co
 co

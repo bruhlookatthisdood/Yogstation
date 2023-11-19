@@ -9,7 +9,7 @@
 	resistance_flags = FLAMMABLE
 	var/title = "book"
 
-/obj/item/storage/book/ComponentInitialize()
+/obj/item/storage/book/Initialize(mapload)
 	. = ..()
 	var/datum/component/storage/STR = GetComponent(/datum/component/storage)
 	STR.max_items = 1
@@ -17,11 +17,11 @@
 /obj/item/storage/book/attack_self(mob/user)
 	to_chat(user, span_notice("The pages of [title] have been cut out!"))
 
-GLOBAL_LIST_INIT(biblenames, list("Bible", "Quran", "Scrapbook", "Burning Bible", "Clown Bible", "Banana Bible", "Creeper Bible", "White Bible", "Holy Light",  "The God Delusion", "Tome",        "The King in Yellow", "Ithaqua", "Scientology", "Melted Bible", "Necronomicon","Insulationism", "Avesta"))
+GLOBAL_LIST_INIT(biblenames, list("Bible", "Quran", "Scrapbook", "Burning Bible", "Clown Bible", "Banana Bible", "Creeper Bible", "White Bible", "Holy Light",  "The God Delusion", "Tome",        "The King in Yellow", "Ithaqua", "Scientology", "Melted Bible", "Necronomicon","Insulationism", "Avesta", "The Holy Flame"))
 //If you get these two lists not matching in size, there will be runtimes and I will hurt you in ways you couldn't even begin to imagine
 // if your bible has no custom itemstate, use one of the existing ones
-GLOBAL_LIST_INIT(biblestates, list("bible", "koran", "scrapbook", "burning", "honk1", "honk2", "creeper", "white", "holylight", "atheist", "tome", "kingyellow", "ithaqua", "scientology", "melted", "necronomicon","insuls", "avesta"))
-GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning", "honk1", "honk2", "creeper", "white", "holylight", "atheist", "tome", "kingyellow", "ithaqua", "scientology", "melted", "necronomicon", "kingyellow", "avesta"))
+GLOBAL_LIST_INIT(biblestates, list("bible", "koran", "scrapbook", "burning", "honk1", "honk2", "creeper", "white", "holylight", "atheist", "tome", "kingyellow", "ithaqua", "scientology", "melted", "necronomicon","insuls", "avesta", "holyflame"))
+GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning", "honk1", "honk2", "creeper", "white", "holylight", "atheist", "tome", "kingyellow", "ithaqua", "scientology", "melted", "necronomicon", "kingyellow", "avesta", "holyflame"))
 
 /mob/proc/bible_check() //The bible, if held, might protect against certain things
 	var/obj/item/storage/book/bible/B = locate() in src
@@ -40,10 +40,12 @@ GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning",
 	var/mob/affecting = null
 	var/deity_name = "Christ"
 	force_string = "holy"
+	slot_flags = ITEM_SLOT_BELT
+	var/success_heal_chance = 60
 
-/obj/item/storage/book/bible/Initialize()
+/obj/item/storage/book/bible/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/anti_magic, FALSE, TRUE)
+	AddComponent(/datum/component/anti_magic, MAGIC_RESISTANCE_HOLY)
 
 /obj/item/storage/book/bible/suicide_act(mob/user)
 	user.visible_message(span_suicide("[user] is offering [user.p_them()]self to [deity_name]! It looks like [user.p_theyre()] trying to commit suicide!"))
@@ -78,7 +80,7 @@ GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning",
 		if(icon_state == "honk1" || icon_state == "honk2")
 			var/mob/living/carbon/human/H = usr
 			H.dna.add_mutation(CLOWNMUT)
-			H.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/clown_hat(H), SLOT_WEAR_MASK)
+			H.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/clown_hat(H), ITEM_SLOT_MASK)
 		if(icon_state == "insuls")
 			var/mob/living/carbon/human/H =usr
 			var/obj/item/clothing/gloves/color/fyellow/insuls = new
@@ -104,14 +106,11 @@ GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning",
 			to_chat(user, span_warning("[src.deity_name] refuses to heal this metallic taint!"))
 			return 0
 
-	var/heal_amt = 10
-	var/list/hurt_limbs = H.get_damaged_bodyparts(1, 1, null, BODYPART_ORGANIC)
+	var/heal_amt = 20
 
-	if(hurt_limbs.len)
-		for(var/X in hurt_limbs)
-			var/obj/item/bodypart/affecting = X
-			if(affecting.heal_damage(heal_amt, heal_amt, null, BODYPART_ORGANIC))
-				H.update_damage_overlays()
+	if(H.getBruteLoss() > 0 || H.getFireLoss() > 0)
+		H.heal_overall_damage(heal_amt, heal_amt, 0, BODYPART_ORGANIC)
+		H.update_damage_overlays()
 		H.visible_message(span_notice("[user] heals [H] with the power of [deity_name]!"))
 		to_chat(H, span_boldnotice("May the power of [deity_name] compel you to be healed!"))
 		playsound(src.loc, "punch", 25, 1, -1)
@@ -124,7 +123,7 @@ GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning",
 		to_chat(user, span_warning("You don't have the dexterity to do this!"))
 		return
 
-	if (HAS_TRAIT(user, TRAIT_CLUMSY) && prob(50))
+	if (HAS_TRAIT(user, TRAIT_CLUMSY) && prob(success_heal_chance))
 		to_chat(user, span_danger("[src] slips out of your hand and hits your head."))
 		user.take_bodypart_damage(10)
 		user.Unconscious(400)
@@ -149,7 +148,7 @@ GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning",
 			to_chat(user, span_warning("You can't heal yourself!"))
 			return
 
-		if(prob(60) && bless(M, user))
+		if(prob(success_heal_chance) && bless(M, user))
 			smack = 0
 		else if(iscarbon(M))
 			var/mob/living/carbon/C = M
@@ -193,17 +192,18 @@ GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning",
 			B.name = name
 			B.icon_state = icon_state
 			B.item_state = item_state
-	if(istype(A, /obj/item/twohanded/required/cult_bastard) && !iscultist(user))
-		var/obj/item/twohanded/required/cult_bastard/sword = A
+	if(istype(A, /obj/item/melee/cult_bastard) && !iscultist(user))
+		var/obj/item/melee/cult_bastard/sword = A
 		to_chat(user, span_notice("You begin to exorcise [sword]."))
 		playsound(src,'sound/hallucinations/veryfar_noise.ogg',40,1)
-		if(do_after(user, 4 SECONDS, target = sword))
+		if(do_after(user, 4 SECONDS, sword))
 			playsound(src,'sound/effects/pray_chaplain.ogg',60,1)
 			for(var/obj/item/soulstone/SS in sword.contents)
 				SS.usability = TRUE
 				for(var/mob/living/simple_animal/shade/EX in SS)
 					SSticker.mode.remove_cultist(EX.mind, 1, 0)
-					EX.icon_state = "ghost1"
+
+					EX.icon_state = "shade_holy"
 					EX.name = "Purified [EX.name]"
 				SS.release_shades(user)
 				qdel(SS)
@@ -217,7 +217,7 @@ GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning",
 			return
 		to_chat(user, span_notice("You begin to exorcise [SS]."))
 		playsound(src,'sound/hallucinations/veryfar_noise.ogg',40,1)
-		if(do_after(user, 4 SECONDS, target = SS))
+		if(do_after(user, 4 SECONDS, SS))
 			playsound(src,'sound/effects/pray_chaplain.ogg',60,1)
 			SS.usability = TRUE
 			SS.purified = TRUE
@@ -226,18 +226,24 @@ GLOBAL_LIST_INIT(bibleitemstates, list("bible", "koran", "scrapbook", "burning",
 				if(M.mind)
 					SS.icon_state = "purified_soulstone2"
 			for(var/mob/living/simple_animal/shade/EX in SS)
+				SSticker.mode.remove_cultist(EX.mind, 1, 0)
 				EX.icon_state = "ghost1"
 				EX.name = "Purified [initial(EX.name)]"
 			user.visible_message(span_notice("[user] has purified [SS]!"))
-	else if(istype(A, /obj/item/nullrod/scythe/talking))
-		var/obj/item/nullrod/scythe/talking/sword = A
+	else if(istype(A, /obj/item/nullrod/talking))
+		var/obj/item/nullrod/talking/sword = A
 		to_chat(user, span_notice("You begin to exorcise [sword]..."))
+		if(sword.owner)
+			to_chat(sword.owner, "you feel the soul in your blade cry out as it starts getting exorcised!")
 		playsound(src,'sound/hallucinations/veryfar_noise.ogg',40,TRUE)
-		if(do_after(user, 4 SECONDS, target = sword))
+		if(do_after(user, 4 SECONDS, sword))
 			playsound(src,'sound/effects/pray_chaplain.ogg',60,TRUE)
 			for(var/mob/living/simple_animal/shade/S in sword.contents)
 				to_chat(S, span_userdanger("You were destroyed by the exorcism!"))
 				qdel(S)
+			if(sword.owner)
+				sword.summon.Remove(sword.owner)
+				sword.owner = null
 			sword.possessed = FALSE //allows the chaplain (or someone else) to reroll a new spirit for their sword
 			sword.name = initial(sword.name)
 			REMOVE_TRAIT(sword, TRAIT_NODROP, HAND_REPLACEMENT_TRAIT) //in case the "sword" is a possessed dummy

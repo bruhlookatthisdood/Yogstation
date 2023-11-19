@@ -4,11 +4,11 @@
 	id = "silver_tongue"
 	desc = "When used near a communications console, allows you to forcefully transmit a message to Central Command, initiating a shuttle recall. Only usable if the shuttle is inbound. Costs 60 Psi."
 	button_icon_state = "silver_tongue"
-	check_flags = AB_CHECK_CONSCIOUS | AB_CHECK_STUN
+	check_flags = AB_CHECK_CONSCIOUS |  AB_CHECK_IMMOBILE
 	psi_cost = 60
 	lucidity_price = 1 //Very niche, so low cost
 
-/datum/action/innate/darkspawn/silver_tongue/IsAvailable()
+/datum/action/innate/darkspawn/silver_tongue/IsAvailable(feedback = FALSE)
 	if(SSshuttle.emergency.mode != SHUTTLE_CALL)
 		return
 	return ..()
@@ -26,7 +26,7 @@
 	"<span class='velvet bold'>[pick("Oknnu. Pda ywlpwej swo hkccaz ej.", "Pda aiancajyu eo kran. Oknnu bkn swopejc ukqn peia.", "We swo knzanaz xu Hws Psk. Whh ckkz jks.")]</span><br>\
 	[span_velvet("You begin transmitting a recall message to Central Command...")]")
 	play_recall_sounds(C)
-	if(!do_after(owner, 8 SECONDS, target = C))
+	if(!do_after(owner, 8 SECONDS, C))
 		in_use = FALSE
 		return
 	if(!C)
@@ -44,7 +44,7 @@
 /datum/action/innate/darkspawn/silver_tongue/proc/play_recall_sounds(obj/machinery/C) //neato sound effects
 	set waitfor = FALSE
 	for(var/i in 1 to 4)
-		sleep(10)
+		sleep(1 SECONDS)
 		if(!C || C.stat)
 			return
 		playsound(C, "terminal_type", 50, TRUE)
@@ -52,7 +52,7 @@
 			playsound(C, 'sound/machines/terminal_alert.ogg', 50, FALSE)
 			do_sparks(5, TRUE, get_turf(C))
 	playsound(C, 'sound/machines/terminal_prompt.ogg', 50, FALSE)
-	sleep(5)
+	sleep(0.5 SECONDS)
 	if(!C || C.stat)
 		return
 	playsound(C, 'sound/machines/terminal_prompt_confirm.ogg', 50, FALSE)

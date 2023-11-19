@@ -34,6 +34,10 @@
 	var/nonlethal = FALSE
 	///if the martial art can be overridden by temporary arts
 	var/allow_temp_override = TRUE
+	///the message for when you try to use a gun you can't use
+	var/no_gun_message = "Use of ranged weaponry would bring dishonor to the clan."
+	///used to allow certain guns as exceptions
+	var/gun_exceptions = list()
 
 /**
   * martial art specific disarm attacks
@@ -98,7 +102,7 @@
   */
 /datum/martial_art/proc/basic_hit(mob/living/carbon/human/A,mob/living/carbon/human/D)
 
-	var/damage = rand(A.dna.species.punchdamagelow, A.dna.species.punchdamagehigh)
+	var/damage = rand(A.get_punchdamagelow(), A.get_punchdamagehigh())
 
 	var/atk_verb = A.dna.species.attack_verb
 	if(!(D.mobility_flags & MOBILITY_STAND))
@@ -122,7 +126,7 @@
 		return FALSE
 
 	var/obj/item/bodypart/affecting = D.get_bodypart(ran_zone(A.zone_selected))
-	var/armor_block = D.run_armor_check(affecting, "melee")
+	var/armor_block = D.run_armor_check(affecting, MELEE)
 
 	playsound(D.loc, A.dna.species.attack_sound, 25, 1, -1)
 	D.visible_message(span_danger("[A] has [atk_verb]ed [D]!"), \
@@ -133,7 +137,7 @@
 
 	log_combat(A, D, "punched")
 
-	if((D.stat != DEAD) && damage >= A.dna.species.punchstunthreshold)
+	if((D.stat != DEAD) && damage >= A.get_punchstunthreshold())
 		D.visible_message(span_danger("[A] has knocked [D] down!!"), \
 								span_userdanger("[A] has knocked [D] down!"))
 		D.apply_effect(40, EFFECT_KNOCKDOWN, armor_block)
@@ -173,6 +177,11 @@
 	if(help_verb)
 		add_verb(H, help_verb)
 	H.mind.martial_art = src
+	if(no_guns)
+		for(var/mob/living/simple_animal/hostile/guardian/guardian in H.hasparasites())
+			guardian.stats.ranged = FALSE
+			guardian.ranged = FALSE
+			to_chat(H, span_holoparasite("<font color=\"[guardian.namedatum.color]\"><b>[guardian.real_name]</b></font> loses their ranged attacks in accordance with your martial art!"))
 	return TRUE
 
 /**

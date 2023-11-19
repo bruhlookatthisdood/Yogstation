@@ -10,7 +10,7 @@
 		return
 	to_chat(user, span_notice("You start installing [B] on [src]..."))
 	playsound(src, 'sound/items/jaws_pry.ogg', 100)
-	if(!do_after(user, 5 SECONDS, target = src))
+	if(!do_after(user, 5 SECONDS, src))
 		return
 	var/brace_dir = dir_to_cardinal(get_dir(src, user))
 	var/turf/T = get_step(src, brace_dir)
@@ -31,9 +31,11 @@
 	playsound(src, 'sound/items/jaws_pry.ogg', 100)
 
 /obj/machinery/door/airlock/proc/dir_to_cardinal(dir)
-	if((dir & NORTH) && (!is_blocked_turf(get_step(src, NORTH), TRUE)))
+	var/turf/north_turf = get_step(src, NORTH)
+	if((dir & NORTH) && (!north_turf.is_blocked_turf(TRUE)))
 		return NORTH
-	if((dir & SOUTH) && (!is_blocked_turf(get_step(src, SOUTH), TRUE)))
+	var/turf/south_turf = get_step(src, SOUTH)
+	if((dir & SOUTH) && (!south_turf.is_blocked_turf(TRUE)))
 		return SOUTH
 	if(dir & EAST)
 		return EAST

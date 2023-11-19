@@ -23,7 +23,7 @@
 
 	new /obj/effect/temp_visual/monkeyify(loc)
 
-	transformation_timer = addtimer(CALLBACK(src, .proc/finish_monkeyize, tr_flags), TRANSFORMATION_DURATION, TIMER_UNIQUE)
+	transformation_timer = addtimer(CALLBACK(src, PROC_REF(finish_monkeyize), tr_flags), TRANSFORMATION_DURATION, TIMER_UNIQUE)
 
 /mob/living/carbon/proc/finish_monkeyize(tr_flags)
 	transformation_timer = null
@@ -89,6 +89,7 @@
 		O.setOrganLoss(ORGAN_SLOT_BRAIN, getOrganLoss(ORGAN_SLOT_BRAIN))
 		O.updatehealth()
 		O.radiation = radiation
+		O.blood_volume = blood_volume * MONKIFY_BLOOD_COEFFICIENT
 
 	//re-add implants to new mob
 	if (tr_flags & TR_KEEPIMPLANTS)
@@ -177,7 +178,7 @@
 //////////////////////////           Humanize               //////////////////////////////
 //Could probably be merged with monkeyize but other transformations got their own procs, too
 
-/mob/living/carbon/proc/humanize(tr_flags = (TR_KEEPITEMS | TR_KEEPVIRUS | TR_KEEPSTUNS | TR_KEEPREAGENTS | TR_DEFAULTMSG))
+/mob/living/carbon/proc/humanize(tr_flags = (TR_KEEPITEMS | TR_KEEPVIRUS | TR_KEEPSTUNS | TR_KEEPREAGENTS | TR_DEFAULTMSG), datum/changelingprofile/chosen_prof)
 	if (notransform || transformation_timer)
 		return
 	//now the rest
@@ -198,9 +199,9 @@
 	invisibility = INVISIBILITY_MAXIMUM
 	new /obj/effect/temp_visual/monkeyify/humanify(loc)
 
-	transformation_timer = addtimer(CALLBACK(src, .proc/finish_humanize, tr_flags), TRANSFORMATION_DURATION, TIMER_UNIQUE)
+	transformation_timer = addtimer(CALLBACK(src, PROC_REF(finish_humanize), tr_flags, chosen_prof), TRANSFORMATION_DURATION, TIMER_UNIQUE)
 
-/mob/living/carbon/proc/finish_humanize(tr_flags)
+/mob/living/carbon/proc/finish_humanize(tr_flags, datum/changelingprofile/chosen_prof)
 	transformation_timer = null
 	var/list/stored_implants = list()
 	var/list/int_organs = list()
@@ -265,6 +266,7 @@
 		O.adjustOrganLoss(ORGAN_SLOT_BRAIN, getOrganLoss(ORGAN_SLOT_BRAIN))
 		O.updatehealth()
 		O.radiation = radiation
+		O.blood_volume = blood_volume / MONKIFY_BLOOD_COEFFICIENT
 
 	//re-add implants to new mob
 	if (tr_flags & TR_KEEPIMPLANTS)
@@ -347,6 +349,9 @@
 
 	transfer_trait_datums(O)
 
+	if(chosen_prof)
+		changeling_transform(O, chosen_prof)
+
 	qdel(src)
 
 /mob/living/carbon/human/AIize(transfer_after = TRUE, client/preference_source)
@@ -370,23 +375,13 @@
 	return ..()
 
 /mob/proc/AIize(transfer_after = TRUE, client/preference_source)
-	var/list/turf/landmark_loc = list()
-	for(var/obj/effect/landmark/start/ai/sloc in GLOB.landmarks_list)
-		if(locate(/mob/living/silicon/ai) in sloc.loc)
-			continue
-		if(sloc.primary_ai)
-			LAZYCLEARLIST(landmark_loc)
-			landmark_loc += sloc.loc
+	var/valid_core = FALSE
+	for(var/obj/machinery/ai/data_core/core in GLOB.data_cores)
+		if(core.valid_data_core())
+			valid_core = TRUE
 			break
-		landmark_loc += sloc.loc
-	if(!landmark_loc.len)
-		to_chat(src, "Oh god sorry we can't find an unoccupied AI spawn location, so we're spawning you on top of someone.")
-		for(var/obj/effect/landmark/start/ai/sloc in GLOB.landmarks_list)
-			landmark_loc += sloc.loc
-
-	if(!landmark_loc.len)
-		message_admins("Could not find ai landmark for [src]. Yell at a mapper! We are spawning them at their current location.")
-		landmark_loc += loc
+	if(!valid_core)
+		message_admins("No valid data core for [src]. Yell at a mapper! The AI will die.")
 
 	if(client)
 		stop_sound_channel(CHANNEL_LOBBYMUSIC)
@@ -394,11 +389,11 @@
 	if(!transfer_after)
 		mind.active = FALSE
 
-	. = new /mob/living/silicon/ai(pick(landmark_loc), null, src)
+	. = new /mob/living/silicon/ai(loc, null, src)
 
 
 	if(preference_source)
-		apply_pref_name("ai",preference_source)
+		apply_pref_name(/datum/preference/name/ai, preference_source)
 
 	qdel(src)
 
@@ -447,7 +442,7 @@
 
 	. = R
 	if(R.ckey && is_banned_from(R.ckey, "Cyborg"))
-		INVOKE_ASYNC(R, /mob/living/silicon/robot.proc/replace_banned_cyborg)
+		INVOKE_ASYNC(R, TYPE_PROC_REF(/mob/living/silicon/robot, replace_banned_cyborg))
 	qdel(src)
 
 /mob/living/silicon/robot/proc/replace_banned_cyborg()
@@ -524,8 +519,8 @@
 	. = new_slime
 	qdel(src)
 
-/mob/proc/become_overmind(starting_points = 60, pointmodifier)
-	var/mob/camera/blob/B = new /mob/camera/blob(get_turf(src), starting_points, pointmodifier)
+/mob/proc/become_overmind(starting_points = 60, pointmodifier = 1, announcement_delay = 6000)
+	var/mob/camera/blob/B = new /mob/camera/blob(get_turf(src), starting_points, pointmodifier, announcement_delay)
 	B.key = key
 	. = B
 	qdel(src)
@@ -636,7 +631,7 @@
 /mob/proc/Animalize()
 
 	var/list/mobtypes = typesof(/mob/living/simple_animal)
-	var/mobpath = input("Which type of mob should [src] turn into?", "Choose a type") in mobtypes
+	var/mobpath = input(usr, "Which type of mob should [src] turn into?", "Choose a type", sortList(mobtypes, /proc/cmp_typepaths_asc))
 
 	if(!safe_animal(mobpath))
 		to_chat(usr, span_danger("Sorry but this mob type is currently unavailable."))

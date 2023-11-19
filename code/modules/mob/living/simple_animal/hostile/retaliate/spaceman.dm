@@ -1,11 +1,11 @@
 /mob/living/simple_animal/hostile/retaliate/spaceman
-	name = "Spaceman"
+	name = "spaceman"
 	desc = "What in the actual hell..?"
 	icon_state = "old"
 	icon_living = "old"
 	icon_dead = "old_dead"
 	icon_gib = "clown_gib"
-	mob_biotypes = list(MOB_ORGANIC, MOB_HUMANOID)
+	mob_biotypes = MOB_ORGANIC|MOB_HUMANOID
 	gender = MALE
 	turns_per_move = 5
 	response_help = "pokes"
@@ -22,7 +22,6 @@
 	attack_sound = 'sound/weapons/punch1.ogg'
 	obj_damage = 0
 	environment_smash = ENVIRONMENT_SMASH_NONE
-	del_on_death = 0
 
 	do_footstep = TRUE
 

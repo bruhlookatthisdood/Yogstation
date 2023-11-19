@@ -1,9 +1,13 @@
-
+#define IGNITE_TURF_LOW_POWER 8
+#define IGNITE_TURF_HIGH_POWER 22
 
 /atom/proc/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	return null
 
-
+/turf/open/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+	if(prob(flammability * 100))
+		IgniteTurf(rand(IGNITE_TURF_LOW_POWER,IGNITE_TURF_HIGH_POWER))
+	return ..()
 
 /turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = 0)
 	return
@@ -11,6 +15,9 @@
 
 /turf/open/hotspot_expose(exposed_temperature, exposed_volume, soh)
 	if(!air)
+		return
+
+	if(air.get_moles(/datum/gas/hypernoblium) > REACTION_OPPRESSION_THRESHOLD)
 		return
 
 	var/oxy = air.get_moles(/datum/gas/oxygen)
@@ -44,9 +51,11 @@
 	icon = 'icons/effects/fire.dmi'
 	icon_state = "1"
 	layer = GASFIRE_LAYER
-	light_range = LIGHT_RANGE_FIRE
-	light_color = LIGHT_COLOR_FIRE
 	blend_mode = BLEND_ADD
+	light_system = MOVABLE_LIGHT
+	light_range = LIGHT_RANGE_FIRE
+	light_power = 1
+	light_color = LIGHT_COLOR_FIRE
 
 	var/volume = 125
 	var/temperature = FIRE_MINIMUM_TEMPERATURE_TO_EXIST
@@ -61,14 +70,18 @@
 		volume = starting_volume
 	if(!isnull(starting_temperature))
 		temperature = starting_temperature
-	perform_exposure()
+	if(!perform_exposure())
+		return INITIALIZE_HINT_QDEL
 	setDir(pick(GLOB.cardinals))
 	air_update_turf()
 
 /obj/effect/hotspot/proc/perform_exposure()
 	var/turf/open/location = loc
 	if(!istype(location) || !(location.air))
-		return
+		return FALSE
+
+	if(location.active_hotspot != src)
+		qdel(location.active_hotspot)
 
 	location.active_hotspot = src
 
@@ -90,7 +103,7 @@
 		var/atom/AT = A
 		if(!QDELETED(AT) && AT != src) // It's possible that the item is deleted in temperature_expose
 			AT.fire_act(temperature, volume)
-	return
+	return TRUE
 
 /obj/effect/hotspot/proc/gauss_lerp(x, x1, x2)
 	var/b = (x1 + x2) * 0.5
@@ -141,7 +154,7 @@
 		add_overlay(fusion_overlay)
 		add_overlay(rainbow_overlay)
 
-	set_light(l_color = rgb(LERP(250,heat_r,greyscale_fire),LERP(160,heat_g,greyscale_fire),LERP(25,heat_b,greyscale_fire)))
+	set_light_color(rgb(LERP(250, heat_r, greyscale_fire), LERP(160, heat_g, greyscale_fire), LERP(25, heat_b, greyscale_fire)))
 
 	heat_r /= 255
 	heat_g /= 255
@@ -203,7 +216,6 @@
 	return TRUE
 
 /obj/effect/hotspot/Destroy()
-	set_light(0)
 	SSair.hotspots -= src
 	var/turf/open/T = loc
 	if(istype(T) && T.active_hotspot == src)
@@ -235,9 +247,6 @@
 /obj/effect/hotspot/singularity_pull()
 	return
 
-/obj/effect/dummy/lighting_obj/moblight/fire
-	name = "fire"
-	light_color = LIGHT_COLOR_FIRE
-	light_range = LIGHT_RANGE_FIRE
-
 #undef INSUFFICIENT
+#undef IGNITE_TURF_LOW_POWER
+#undef IGNITE_TURF_HIGH_POWER

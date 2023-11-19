@@ -66,7 +66,7 @@ Consuming extracts:
 		fed = TRUE
 	else
 		M.visible_message(span_danger("[user] tries to force [M] to eat [src]!"), span_userdanger("[user] tries to force you to eat [src]!"))
-		if(do_after(user, 2 SECONDS, target = M))
+		if(do_after(user, 2 SECONDS, M))
 			fed = TRUE
 			M.visible_message(span_danger("[user] forces [M] to eat [src]!"), span_warning("[user] forces you to eat [src]."))
 	if(fed)
@@ -196,7 +196,7 @@ Consuming extracts:
 
 /obj/item/slime_cookie/darkblue/do_effect(mob/living/M, mob/user)
 	M.adjust_bodytemperature(-110)
-	M.ExtinguishMob()
+	M.extinguish_mob()
 
 /obj/item/slimecross/consuming/silver
 	colour = "silver"
@@ -293,7 +293,7 @@ Consuming extracts:
 	taste = "vanilla and " //Randomly selected color dye.
 	var/colour = "#FFFFFF"
 
-/obj/item/slime_cookie/pyrite/Initialize()
+/obj/item/slime_cookie/pyrite/Initialize(mapload)
 	. = ..()
 	var/tastemessage = "paint remover"
 	switch(rand(1,7))

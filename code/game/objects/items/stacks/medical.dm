@@ -33,26 +33,32 @@
 	var/absorption_capacity
 	/// How quickly we lower the blood flow on a cut wound we're bandaging. Expected lifetime of this bandage in ticks is thus absorption_capacity/absorption_rate, or until the cut heals, whichever comes first
 	var/absorption_rate
+	/// Coefficient for applying this stack to a wound
+	var/treatment_speed = 1
 
 /obj/item/stack/medical/attack(mob/living/M, mob/user)
 	. = ..()
 	try_heal(M, user)
 
+/obj/item/stack/medical/get_belt_overlay()
+	return mutable_appearance('icons/obj/clothing/belt_overlays.dmi', "stack_medical")
 
 /obj/item/stack/medical/proc/try_heal(mob/living/M, mob/user, silent = FALSE)
 	if(!M.can_inject(user, TRUE))
+		return
+	if(DOING_INTERACTION_WITH_TARGET(user, M))
 		return
 	if(M == user)
 		playsound(src, pick(apply_sounds), 25)
 		if(!silent)
 			user.visible_message(span_notice("[user] starts to apply \the [src] on [user.p_them()]self..."), span_notice("You begin applying \the [src] on yourself..."))
-		if(!do_mob(user, M, self_delay, extra_checks=CALLBACK(M, /mob/living/proc/can_inject, user, TRUE)))
+		if(!do_after(user, self_delay, M, extra_checks=CALLBACK(M, TYPE_PROC_REF(/mob/living, can_inject), user, TRUE)))
 			return
 	else if(other_delay)
 		playsound(src, pick(apply_sounds), 25)
 		if(!silent)
 			user.visible_message(span_notice("[user] starts to apply \the [src] on [M]."), span_notice("You begin applying \the [src] on [M]..."))
-		if(!do_mob(user, M, other_delay, extra_checks=CALLBACK(M, /mob/living/proc/can_inject, user, TRUE)))
+		if(!do_after(user, other_delay, M, extra_checks=CALLBACK(M, TYPE_PROC_REF(/mob/living, can_inject), user, TRUE)))
 			return
 
 	if(heal(M, user))
@@ -66,6 +72,9 @@
 
 /obj/item/stack/medical/proc/heal_carbon(mob/living/carbon/C, mob/user, brute, burn)
 	var/obj/item/bodypart/affecting = C.get_bodypart(check_zone(user.zone_selected))
+	var/list/damaged_parts = C.get_damaged_bodyparts(brute, burn, status = BODYPART_ORGANIC) // list of bodyparts that have the damage types we are able to heal
+	if(damaged_parts.len && !(affecting in damaged_parts) && C == user)
+		affecting = pick(damaged_parts) // pick from the list of damaged bodyparts if the targeted one is fine
 	if(!affecting) //Missing limb?
 		to_chat(user, span_warning("[C] doesn't have \a [parse_zone(user.zone_selected)]!"))
 		return
@@ -166,8 +175,15 @@
 
 	user.visible_message(span_warning("[user] begins wrapping the wounds on [M]'s [limb.name] with [src]..."), span_warning("You begin wrapping the wounds on [user == M ? "your" : "[M]'s"] [limb.name] with [src]..."))
 
-	if(!do_after(user, (user == M ? self_delay : other_delay), target=M))
+	playsound(src, 'sound/effects/rip2.ogg', 25)
+
+	/// Use other_delay if healing someone else (usually 1 second)
+	/// Use self_delay if healing yourself (usually 3 seconds)
+	/// Reduce delay by 20% if medical
+	if(!do_after(user, (user == M ? self_delay : other_delay) * (IS_MEDICAL(user) ? 0.8 : 1), M))
 		return
+
+	playsound(src, 'sound/effects/rip1.ogg', 25)
 
 	user.visible_message(span_green("[user] applies [src] to [M]'s [limb.name]."), span_green("You bandage the wounds on [user == M ? "yourself" : "[M]'s"] [limb.name]."))
 	limb.apply_gauze(src)
@@ -214,26 +230,44 @@
 	icon_state = "suture"
 	self_delay = 30
 	other_delay = 10
-	amount = 10
-	max_amount = 10
+	amount = 15
+	max_amount = 15
 	repeating = TRUE
 	heal_brute = 10
 	stop_bleeding = 0.6
-	grind_results = list(/datum/reagent/medicine/spaceacillin = 2)
+	grind_results = list(/datum/reagent/space_cleaner/sterilizine = 2)
 
 /obj/item/stack/medical/suture/emergency
 	name = "emergency suture"
 	desc = "A value pack of cheap sutures, not very good at repairing damage, but still decent at stopping bleeding."
+	icon_state = "suture_green"
 	heal_brute = 5
-	amount = 5
-	max_amount = 5
+	grind_results = list(/datum/reagent/space_cleaner/sterilizine = 1)
+
+/obj/item/stack/medical/suture/emergency/makeshift
+	name = "makeshift suture"
+	desc = "A makeshift suture, gnarly looking, but it...should work."
+	heal_brute = 4
+	stop_bleeding = 0.44
+	grind_results = null
+
+/obj/item/stack/medical/suture/emergency/makeshift/tribal
+	name = "sinew suture"
+	desc = "A suture created from well processed sinew, with a bone needle"
+	icon_state = "suture_tribal"
+	heal_brute = 6
+	stop_bleeding = 0.55
+	grind_results = list(/datum/reagent/liquidgibs = 2)
 
 /obj/item/stack/medical/suture/medicated
 	name = "medicated suture"
 	icon_state = "suture_purp"
 	desc = "A suture infused with drugs that speed up wound healing of the treated laceration."
+	amount = 25
+	max_amount = 25
 	heal_brute = 15
 	stop_bleeding = 0.75
+	treatment_speed = 0.5
 	grind_results = list(/datum/reagent/medicine/polypyr = 2)
 
 /obj/item/stack/medical/suture/heal(mob/living/M, mob/user)
@@ -258,7 +292,7 @@
 	to_chat(user, span_warning("You can't heal [M] with \the [src]!"))
 
 /obj/item/stack/medical/ointment
-	name = "ointment"
+	name = "burn ointment"
 	desc = "Basic burn ointment, rated effective for second degree burns with proper bandaging, though it's still an effective stabilizer for worse burns. Not terribly good at outright healing burns though."
 	gender = PLURAL
 	singular_name = "ointment"
@@ -266,15 +300,15 @@
 	lefthand_file = 'icons/mob/inhands/equipment/medical_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/medical_righthand.dmi'
 	apply_sounds = list('sound/effects/ointment.ogg')
-	amount = 8
-	max_amount = 8
-	self_delay = 40
-	other_delay = 20
-
+	amount = 15
+	max_amount = 15
+	self_delay = 4 SECONDS
+	other_delay = 2 SECONDS
+	repeating = TRUE
 	heal_burn = 5
 	flesh_regeneration = 2.5
 	sanitization = 0.25
-	grind_results = list(/datum/reagent/medicine/c2/lenturi = 10)
+	grind_results = null
 
 /obj/item/stack/medical/ointment/heal(mob/living/M, mob/user)
 	if(M.stat == DEAD)
@@ -288,6 +322,13 @@
 	user.visible_message(span_suicide("[user] is squeezing \the [src] into [user.p_their()] mouth! [user.p_do(TRUE)]n't [user.p_they()] know that stuff is toxic?"))
 	return TOXLOSS
 
+/obj/item/stack/medical/ointment/antiseptic
+	name = "antiseptic ointment"
+	desc = "A specialized ointment, designed with preventing infections in mind."
+	icon_state = "aointment"
+	sanitization = 1.0 // its main purpose is to disinfect
+	grind_results = list(/datum/reagent/silver = 5)
+
 /obj/item/stack/medical/mesh
 	name = "regenerative mesh"
 	desc = "A bacteriostatic mesh used to dress burns."
@@ -297,24 +338,25 @@
 	self_delay = 30
 	other_delay = 10
 	amount = 15
-	heal_burn = 10
 	max_amount = 15
+	heal_burn = 10
 	repeating = TRUE
 	sanitization = 0.75
 	flesh_regeneration = 3
 
 	var/is_open = TRUE ///This var determines if the sterile packaging of the mesh has been opened.
-	grind_results = list(/datum/reagent/medicine/spaceacillin = 2)
+	grind_results = list(/datum/reagent/space_cleaner/sterilizine = 2)
 
-/obj/item/stack/medical/mesh/Initialize()
+/obj/item/stack/medical/mesh/Initialize(mapload)
 	. = ..()
 	if(amount == max_amount)	 //only seal full mesh packs
 		is_open = FALSE
-		update_icon()
+		update_appearance(UPDATE_ICON)
 
-/obj/item/stack/medical/mesh/update_icon()
+/obj/item/stack/medical/mesh/update_icon_state()
+	. = ..()
 	if(is_open)
-		return ..()
+		return
 	icon_state = "regen_mesh_closed"
 
 /obj/item/stack/medical/mesh/heal(mob/living/M, mob/user)
@@ -349,40 +391,43 @@
 	if(!is_open)
 		is_open = TRUE
 		to_chat(user, span_notice("You open the sterile mesh package."))
-		update_icon()
+		update_appearance(UPDATE_ICON)
 		playsound(src, 'sound/items/poster_ripped.ogg', 20, TRUE)
 		return
 	. = ..()
 
 /obj/item/stack/medical/mesh/advanced
 	name = "advanced regenerative mesh"
-	desc = "An advanced mesh made with aloe extracts and sterilizing chemicals, used to treat burns."
-
+	desc = "An advanced mesh made with sterilizing chemicals, used to treat burns."
 	gender = PLURAL
 	singular_name = "advanced regenerative mesh"
 	icon_state = "aloe_mesh"
+	amount = 25
+	max_amount = 25
 	heal_burn = 15
 	sanitization = 1.25
 	flesh_regeneration = 3.5
 	grind_results = list(/datum/reagent/consumable/aloejuice = 1)
 
-/obj/item/stack/medical/mesh/advanced/update_icon()
+/obj/item/stack/medical/mesh/advanced/update_icon_state()
+	. = ..()
 	if(is_open)
-		return ..()
+		return
 	icon_state = "aloe_mesh_closed"
 
 /obj/item/stack/medical/aloe
 	name = "aloe cream"
 	desc = "A healing paste you can apply on wounds."
-
 	icon_state = "aloe_paste"
 	apply_sounds = list('sound/effects/ointment.ogg')
 	self_delay = 20
 	other_delay = 10
 	novariants = TRUE
+	repeating = TRUE
 	amount = 20
 	max_amount = 20
-	var/heal = 3
+	var/heal = 5 //aloe is good for the burns but does not sterilize much at all
+	sanitization = 0.1
 	grind_results = list(/datum/reagent/consumable/aloejuice = 1)
 
 /obj/item/stack/medical/aloe/heal(mob/living/M, mob/user)
@@ -391,7 +436,8 @@
 		to_chat(user, span_warning("[M] is dead! You can not help [M.p_them()]."))
 		return FALSE
 	if(iscarbon(M))
-		return heal_carbon(M, user, heal, heal)
+		M.adjustFireLoss(-heal, TRUE) //there's other, infinitely better ways to heal brute damage.
+		return
 	if(isanimal(M))
 		var/mob/living/simple_animal/critter = M
 		if (!(critter.healable))
